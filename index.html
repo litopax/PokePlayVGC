@@ -373,41 +373,170 @@ function teamCard(t,own){
 }
 function openTeam(t){
   t=t||{name:'',pokemon:[],is_public:true};
+  // estado de edición en memoria
+  teamDraft={ id:t.id||'', name:t.name||'', is_public:t.is_public!==false,
+              pokemon:JSON.parse(JSON.stringify(t.pokemon||[])) };
+  teamTab='editor';
+  if(!teamDraft.pokemon.length) teamTab='import';
+  renderTeamModal();
+}
+let teamDraft=null, teamTab='editor';
+const NATURES=['','Hardy','Lonely','Brave','Adamant','Naughty','Bold','Docile','Relaxed','Impish','Lax','Timid','Hasty','Serious','Jolly','Naive','Modest','Mild','Quiet','Bashful','Rash','Calm','Gentle','Sassy','Careful','Quirky'];
+const TERA=['','Normal','Fire','Water','Electric','Grass','Ice','Fighting','Poison','Ground','Flying','Psychic','Bug','Rock','Ghost','Dragon','Dark','Steel','Fairy','Stellar'];
+
+function renderTeamModal(){
+  const t=teamDraft;
   modal(`<div class="section-title bebas" style="font-size:22px">${t.id?'Editar team':'Nuevo team'}</div>
-    <label>Nombre</label><input id="tName" class="field" value="${esc(t.name)}" placeholder="TR Mega Venusaur">
-    <label style="margin-top:14px">Pokémon (pegá en formato Showdown, o uno por línea)</label>
-    <textarea id="tPaste" class="field" placeholder="Incineroar @ Lum Berry&#10;Ability: Intimidate&#10;- Fake Out&#10;...">${(t.pokemon||[]).map(p=>p.name).join('\n')}</textarea>
-    <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="tPub" ${t.is_public?'checked':''}> Público</label></div>
+    <label>Nombre del team</label><input id="tName" class="field" value="${esc(t.name)}" placeholder="TR Mega Venusaur" oninput="teamDraft.name=this.value">
+    <div class="tabs" style="margin:16px 0">
+      <button class="${teamTab==='editor'?'active':''}" onclick="teamTab='editor';renderTeamModal()">Editor visual (${t.pokemon.length})</button>
+      <button class="${teamTab==='import'?'active':''}" onclick="teamTab='import';renderTeamModal()">Importar / Exportar</button>
+    </div>
+    ${teamTab==='import'? importPane() : editorPane()}
+    <div class="row" style="margin-top:14px"><label style="margin:0"><input type="checkbox" id="tPub" ${t.is_public?'checked':''} onchange="teamDraft.is_public=this.checked"> Público</label></div>
     <div class="err" id="tErr"></div>
     <div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn ghost" onclick="closeModal()">Cancelar</button>
-      <button class="btn" onclick="saveTeam('${t.id||''}')">Guardar</button></div>`);
+      <button class="btn" onclick="saveTeam()">Guardar team</button></div>`);
 }
+function importPane(){
+  return `<label>Pegá tu equipo en formato Pokémon Showdown</label>
+    <textarea id="tPaste" class="field" style="min-height:180px" placeholder="Incineroar @ Lum Berry&#10;Ability: Intimidate&#10;Level: 50&#10;Tera Type: Ghost&#10;EVs: 252 HP / 4 Atk / 252 SpD&#10;Careful Nature&#10;- Fake Out&#10;- Flare Blitz&#10;- Parting Shot&#10;- Knock Off">${esc(exportShowdown(teamDraft.pokemon))}</textarea>
+    <div class="row" style="margin-top:10px;gap:8px">
+      <button class="btn ghost sm" onclick="applyImport()">⬇ Cargar al editor</button>
+      <button class="btn ghost sm" onclick="copyExport()">⧉ Copiar export</button>
+    </div>
+    <div class="muted" style="margin-top:8px;font-size:12px">Pega y tocá "Cargar al editor" para editar cada Pokémon. También sirve para exportar el team y pegarlo en Showdown.</div>`;
+}
+function applyImport(){
+  const mons=parsePaste($('tPaste').value);
+  if(!mons.length){ $('tErr').textContent='No pude leer ningún Pokémon. Revisá el formato.'; return; }
+  teamDraft.pokemon=mons; teamTab='editor'; renderTeamModal();
+}
+function copyExport(){
+  const txt=exportShowdown(teamDraft.pokemon);
+  navigator.clipboard?.writeText(txt).then(()=>{ $('tErr').style.color='var(--win)'; $('tErr').textContent='Copiado al portapapeles.'; });
+}
+function editorPane(){
+  const mons=teamDraft.pokemon;
+  return `<div class="grid" style="gap:10px">
+    ${mons.map((p,i)=>monEditor(p,i)).join('')}
+    ${mons.length<6?`<button class="btn ghost sm" onclick="addMon()" style="align-self:flex-start">+ Agregar Pokémon</button>`:''}
+    ${!mons.length?'<div class="muted">Agregá un Pokémon o usá la pestaña Importar.</div>':''}
+  </div>`;
+}
+function monEditor(p,i){
+  const st=k=>`<input class="field" style="padding:6px 8px;font-size:12px;text-align:center" placeholder="-" value="${p.evs[k]??''}" oninput="setStat(${i},'evs','${k}',this.value)">`;
+  const iv=k=>`<input class="field" style="padding:6px 8px;font-size:12px;text-align:center" placeholder="31" value="${p.ivs[k]??''}" oninput="setStat(${i},'ivs','${k}',this.value)">`;
+  return `<div class="teamcard" style="padding:14px">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <div class="row" style="gap:8px"><img src="${SPRITE(p.name)}" onerror="this.style.visibility='hidden'" style="width:40px;height:40px;image-rendering:pixelated">
+        <input class="field" style="font-weight:600" placeholder="Pokémon (ej: Incineroar)" value="${esc(p.name)}" oninput="setMon(${i},'name',this.value)"></div>
+      <button class="btn red sm" onclick="rmMon(${i})">✕</button></div>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div><label>Mote</label><input class="field" value="${esc(p.nickname)}" oninput="setMon(${i},'nickname',this.value)"></div>
+      <div><label>Objeto</label><input class="field" value="${esc(p.item)}" oninput="setMon(${i},'item',this.value)"></div>
+      <div><label>Habilidad</label><input class="field" value="${esc(p.ability)}" oninput="setMon(${i},'ability',this.value)"></div>
+      <div><label>Naturaleza</label><select class="field" onchange="setMon(${i},'nature',this.value)">${NATURES.map(n=>`<option ${n===p.nature?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div><label>Tera Type</label><select class="field" onchange="setMon(${i},'teraType',this.value)">${TERA.map(n=>`<option ${n===p.teraType?'selected':''}>${n}</option>`).join('')}</select></div>
+      <div><label>Nivel</label><input class="field" placeholder="50" value="${esc(p.level)}" oninput="setMon(${i},'level',this.value)"></div>
+      <div><label>Género</label><select class="field" onchange="setMon(${i},'gender',this.value)"><option value="" ${!p.gender?'selected':''}>—</option><option ${p.gender==='M'?'selected':''}>M</option><option ${p.gender==='F'?'selected':''}>F</option></select></div>
+      <div style="display:flex;align-items:flex-end"><label style="margin:0"><input type="checkbox" ${p.shiny?'checked':''} onchange="setMon(${i},'shiny',this.checked)"> Shiny ✨</label></div>
+    </div>
+    <label>EVs</label><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:6px">
+      <div style="text-align:center;font-size:9px;color:var(--txt2)">HP${st('hp')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Atk${st('atk')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Def${st('def')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">SpA${st('spa')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">SpD${st('spd')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Spe${st('spe')}</div>
+    </div>
+    <label>IVs <span style="text-transform:none">(vacío = 31)</span></label><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:8px">
+      <div style="text-align:center;font-size:9px;color:var(--txt2)">HP${iv('hp')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Atk${iv('atk')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Def${iv('def')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">SpA${iv('spa')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">SpD${iv('spd')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Spe${iv('spe')}</div>
+    </div>
+    <label>Movimientos</label>
+    <div class="grid" style="grid-template-columns:1fr 1fr;gap:6px">
+      ${[0,1,2,3].map(m=>`<input class="field" style="font-size:12px" placeholder="Movimiento ${m+1}" value="${esc(p.moves[m]||'')}" oninput="setMove(${i},${m},this.value)">`).join('')}
+    </div>
+  </div>`;
+}
+function setMon(i,k,v){ teamDraft.pokemon[i][k]=v; if(k==='name'){ /* refrescar sprite sin re-render completo */ } }
+function setMove(i,m,v){ teamDraft.pokemon[i].moves[m]=v; }
+function setStat(i,grp,k,v){ const n=parseInt(v,10); if(v===''||isNaN(n)) delete teamDraft.pokemon[i][grp][k]; else teamDraft.pokemon[i][grp][k]=n; }
+function addMon(){ teamDraft.pokemon.push(blankMon()); renderTeamModal(); }
+function rmMon(i){ teamDraft.pokemon.splice(i,1); renderTeamModal(); }
+
+async function saveTeam(){
+  const name=(teamDraft.name||'').trim();
+  if(!name){ $('tErr').style.color='var(--loss)'; $('tErr').textContent='Poné un nombre.'; return; }
+  // limpiar moves vacíos
+  const pokemon=teamDraft.pokemon.map(p=>({...p,moves:(p.moves||[]).filter(Boolean)})).filter(p=>p.name.trim());
+  const payload={name,pokemon,is_public:teamDraft.is_public,owner:me.id};
+  let err;
+  if(teamDraft.id){ ({error:err}=await sb.from('teams').update(payload).eq('id',teamDraft.id)); }
+  else            { ({error:err}=await sb.from('teams').insert(payload)); }
+  if(err){ $('tErr').style.color='var(--loss)'; $('tErr').textContent=err.message; return; }
+  closeModal(); route();
+}
+/* ── Parser completo formato Pokémon Showdown ── */
+const STAT_KEYS=['hp','atk','def','spa','spd','spe'];
+function blankMon(){ return {name:'',nickname:'',gender:'',item:'',ability:'',level:'',shiny:false,
+  teraType:'',nature:'',evs:{},ivs:{},moves:[]}; }
 function parsePaste(txt){
-  // soporta Showdown o lista simple de nombres
-  const blocks=txt.split(/\n\s*\n/).map(b=>b.trim()).filter(Boolean);
+  const blocks=txt.split(/\n\s*\n/).map(b=>b.replace(/\r/g,'').trim()).filter(Boolean);
   const mons=[];
   blocks.forEach(b=>{
-    const first=b.split('\n')[0].trim();
-    if(!first) return;
-    const name=first.split('@')[0].split('(')[0].trim();
-    if(name) mons.push({name});
+    const lines=b.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(!lines.length) return;
+    const p=blankMon();
+    // primera línea: Mote (Especie) (G) @ Objeto   |  o  Especie @ Objeto
+    let head=lines.shift();
+    if(head.includes(' @ ')){ const [l,r]=head.split(' @ '); head=l.trim(); p.item=r.trim(); }
+    // género (M)/(F) al final
+    const gm=head.match(/\s*\(([MF])\)\s*$/); if(gm){ p.gender=gm[1]; head=head.replace(/\s*\([MF]\)\s*$/,'').trim(); }
+    // especie entre paréntesis = había mote
+    const sm=head.match(/^(.*?)\s*\(([^)]+)\)\s*$/);
+    if(sm){ p.nickname=sm[1].trim(); p.name=sm[2].trim(); } else { p.name=head.trim(); }
+    // resto de líneas
+    lines.forEach(line=>{
+      if(line.startsWith('- ')){ p.moves.push(line.slice(2).trim()); return; }
+      const [k,...rest]=line.split(':'); const key=k.trim().toLowerCase(); const val=rest.join(':').trim();
+      if(key==='ability') p.ability=val;
+      else if(key==='level') p.level=val;
+      else if(key==='shiny') p.shiny=/yes/i.test(val);
+      else if(key==='tera type') p.teraType=val;
+      else if(/nature$/i.test(line)){ p.nature=line.replace(/nature/i,'').trim(); }
+      else if(key==='evs') parseStats(val,p.evs);
+      else if(key==='ivs') parseStats(val,p.ivs);
+    });
+    if(p.name) mons.push(p);
   });
-  if(!mons.length){ // lista simple
-    txt.split('\n').map(l=>l.trim()).filter(Boolean).forEach(n=>mons.push({name:n}));
-  }
   return mons.slice(0,6);
 }
-async function saveTeam(id){
-  const name=$('tName').value.trim();
-  if(!name){ $('tErr').textContent='Poné un nombre.'; return; }
-  const pokemon=parsePaste($('tPaste').value);
-  const is_public=$('tPub').checked;
-  const payload={name,pokemon,is_public,owner:me.id};
-  let err;
-  if(id){ ({error:err}=await sb.from('teams').update(payload).eq('id',id)); }
-  else  { ({error:err}=await sb.from('teams').insert(payload)); }
-  if(err){ $('tErr').textContent=err.message; return; }
-  closeModal(); route();
+function parseStats(str,obj){
+  str.split('/').forEach(part=>{
+    const m=part.trim().match(/(\d+)\s+(HP|Atk|Def|SpA|SpD|Spe)/i);
+    if(m) obj[m[2].toLowerCase()]=parseInt(m[1],10);
+  });
+}
+/* ── Exportar un team de vuelta a formato Showdown ── */
+function exportShowdown(mons){
+  return (mons||[]).map(p=>{
+    let head=p.name||'';
+    if(p.nickname) head=`${p.nickname} (${p.name})`;
+    if(p.gender) head+=` (${p.gender})`;
+    if(p.item) head+=` @ ${p.item}`;
+    const L=[head];
+    if(p.ability) L.push(`Ability: ${p.ability}`);
+    if(p.level&&p.level!=='100'&&p.level!=='') L.push(`Level: ${p.level}`);
+    if(p.shiny) L.push(`Shiny: Yes`);
+    if(p.teraType) L.push(`Tera Type: ${p.teraType}`);
+    const ev=fmtStats(p.evs); if(ev) L.push(`EVs: ${ev}`);
+    if(p.nature) L.push(`${p.nature} Nature`);
+    const iv=fmtStats(p.ivs,true); if(iv) L.push(`IVs: ${iv}`);
+    (p.moves||[]).filter(Boolean).forEach(m=>L.push(`- ${m}`));
+    return L.join('\n');
+  }).join('\n\n');
+}
+function fmtStats(obj,isIV){
+  if(!obj) return '';
+  const order=['hp','atk','def','spa','spd','spe'], label={hp:'HP',atk:'Atk',def:'Def',spa:'SpA',spd:'SpD',spe:'Spe'};
+  return order.filter(k=>obj[k]!=null && (isIV? obj[k]!==31 : obj[k]!==0))
+    .map(k=>`${obj[k]} ${label[k]}`).join(' / ');
 }
 async function delTeam(id){
   if(!confirm('¿Borrar este team y sus partidas asociadas?'))return;
