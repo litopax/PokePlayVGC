@@ -151,7 +151,20 @@ textarea.field{resize:vertical;min-height:80px;font-family:monospace;font-size:1
     </div>
     <div class="err" id="auErr"></div>
     <button class="btn" style="width:100%;margin-top:8px" id="auBtn" onclick="doAuth()">Entrar</button>
+    <div id="forgotLink" style="text-align:center;margin-top:12px;font-size:13px"><a href="#" onclick="sendReset();return false;">¿Olvidaste tu contraseña?</a></div>
     <div class="muted" style="text-align:center;margin-top:14px;font-size:12px">Tu contraseña la gestiona Supabase Auth de forma segura.</div>
+  </div>
+</div>
+
+<!-- ============ RESET PASSWORD ============ -->
+<div id="resetView" class="auth hidden">
+  <div class="card">
+    <div class="section-title bebas" style="font-size:24px">Nueva contraseña</div>
+    <div class="muted" style="margin-bottom:16px">Escribí tu nueva contraseña para terminar.</div>
+    <label>Nueva contraseña</label>
+    <input id="rsPass" class="field" type="password" placeholder="••••••••" autocomplete="new-password">
+    <div class="err" id="rsErr"></div>
+    <button class="btn" style="width:100%;margin-top:10px" id="rsBtn" onclick="doReset()">Guardar contraseña</button>
   </div>
 </div>
 
@@ -214,7 +227,28 @@ async function doAuth(){
   }catch(e){ $('auErr').style.color='var(--loss)'; $('auErr').textContent=e.message; }
   $('auBtn').disabled=false;
 }
-async function logout(){ await sb.auth.signOut(); me=null; route(); }
+async function logout(){ await sb.auth.signOut(); me=null; recovering=false; route(); }
+
+/* ---- recuperación de contraseña ---- */
+let recovering = false;
+async function sendReset(){
+  const email=$('auEmail').value.trim();
+  if(!email){ $('auErr').style.color='var(--loss)'; $('auErr').textContent='Escribí tu email arriba y volvé a tocar el enlace.'; return; }
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.href.split('#')[0]});
+  $('auErr').style.color = error? 'var(--loss)':'var(--win)';
+  $('auErr').textContent = error? error.message : 'Te enviamos un email para restablecer la contraseña. Revisá tu correo.';
+}
+async function doReset(){
+  const pass=$('rsPass').value;
+  if(!pass||pass.length<6){ $('rsErr').textContent='La contraseña debe tener al menos 6 caracteres.'; return; }
+  $('rsBtn').disabled=true;
+  const {error}=await sb.auth.updateUser({password:pass});
+  $('rsBtn').disabled=false;
+  if(error){ $('rsErr').textContent=error.message; return; }
+  recovering=false;
+  history.replaceState(null,'',window.location.pathname+window.location.search);
+  await loadMe(); route();
+}
 
 /* ════════════════ DATA ════════════════ */
 async function loadMe(){
@@ -246,6 +280,15 @@ function computeStats(matches){
 
 /* ════════════════ ROUTER / RENDER ════════════════ */
 async function route(){
+  // pantalla de cambio de contraseña (tiene prioridad)
+  if(recovering){
+    $('authView').classList.add('hidden');
+    $('app').classList.add('hidden');
+    $('topbar').classList.add('hidden');
+    $('resetView').classList.remove('hidden');
+    return;
+  }
+  $('resetView').classList.add('hidden');
   // visibilidad de vistas
   const logged=!!me;
   $('authView').classList.toggle('hidden', logged);
@@ -480,7 +523,22 @@ async function renderProfile(uid){
 /* ════════════════ INIT ════════════════ */
 (async function init(){
   if(!configured){ $('configBanner').classList.remove('hidden'); $('authView').classList.remove('hidden'); return; }
-  sb.auth.onAuthStateChange(async()=>{ await loadMe(); route(); });
+
+  // ¿el link trajo un error (link vencido/inválido)?
+  const hash=new URLSearchParams(window.location.hash.slice(1));
+  if(hash.get('error')){
+    $('authView').classList.remove('hidden');
+    $('auErr').style.color='var(--loss)';
+    $('auErr').textContent = hash.get('error_code')==='otp_expired'
+      ? 'El enlace venció o ya fue usado. Pedí uno nuevo con "¿Olvidaste tu contraseña?".'
+      : (hash.get('error_description')||'El enlace no es válido.').replace(/\+/g,' ');
+    history.replaceState(null,'',window.location.pathname+window.location.search);
+  }
+
+  sb.auth.onAuthStateChange(async(event)=>{
+    if(event==='PASSWORD_RECOVERY'){ recovering=true; route(); return; }
+    await loadMe(); route();
+  });
   await loadMe(); route();
 })();
 </script>
