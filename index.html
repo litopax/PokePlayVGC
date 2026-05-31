@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VGC Tracker — Red social competitiva</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <style>
 :root{
   --bg:#0a0a14; --panel:#12121f; --panel2:#1a1a2b; --line:#262640;
@@ -178,8 +178,8 @@ textarea.field{resize:vertical;min-height:80px;font-family:monospace;font-size:1
 /* ════════════════════════════════════════════════════════════
    1)  PEGÁ ACÁ TUS CLAVES DE SUPABASE
    ──────────────────────────────────────────────────────────── */
-const SUPABASE_URL      = "https://altfgsmuwbifuojirugg.supabase.co";        // ej: https://abcd.supabase.co
-const SUPABASE_ANON_KEY = "sb_publishable_BmCm5m4O7MypoqQV2TAnKQ_iSIY8rqM";   // la "anon public" key
+const SUPABASE_URL      = "https://altfgsmuwbifuojirugg.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_BmCm5m4O7MypoqQV2TAnKQ_iSIY8rqM";
 /* ════════════════════════════════════════════════════════════ */
 
 const configured = SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 20;
