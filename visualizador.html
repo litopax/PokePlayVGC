@@ -2237,7 +2237,10 @@ async function parseShowdown(text) {
     // Line 1: Name (Gender) @ Item
     const header = lines[0];
     const atMatch = header.match(/^(.+?)(?:\s*\([MF]\))?\s*@\s*(.+)$/);
-    const name    = atMatch ? atMatch[1].trim() : header.replace(/\s*\([MF]\).*$/, '').trim();
+    const rawName = atMatch ? atMatch[1].trim() : header.replace(/\s*\([MF]\).*$/, '').trim();
+    // If format is "Nickname (Species)" or "Nickname (Species) (Gender)", extract Species
+    const nicknameMatch = rawName.match(/^.+?\s*\(([^MF][^)]+)\)\s*$/);
+    const name = nicknameMatch ? nicknameMatch[1].trim() : rawName;
     const item    = atMatch ? atMatch[2].trim() : '';
     const shiny   = lines.some(l => /^shiny\s*:\s*yes/i.test(l));
 
