@@ -82,11 +82,17 @@ textarea.field{resize:vertical;min-height:80px;font-family:monospace;font-size:1
 .teamcard::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
   background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.06) 50%,transparent 60%);
   transform:rotate(0deg);pointer-events:none}
-.teamhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
-.mons{display:flex;flex-wrap:wrap;gap:6px}
-.mon{display:flex;align-items:center;gap:6px;background:var(--bg);border:1px solid var(--line);
-  border-radius:8px;padding:4px 9px 4px 4px;font-size:12.5px}
-.mon img{width:30px;height:30px;image-rendering:pixelated}
+.teamhead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px}
+.mons{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.mon{display:flex;align-items:center;gap:0;background:var(--bg);border:1px solid var(--line);
+  border-radius:9px;overflow:hidden;min-height:46px}
+.mon-sprite{width:46px;height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.03)}
+.mon-sprite img{width:38px;height:38px;image-rendering:pixelated}
+.mon-info{flex:1;min-width:0;padding:4px 8px;display:flex;flex-direction:column;justify-content:center;gap:1px;border-left:1px solid var(--line)}
+.mon-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mon-item{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team-actions{display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 
 .list-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;
   background:var(--panel);border:1px solid var(--line);border-radius:10px}
@@ -164,196 +170,6 @@ select.ps-field{cursor:pointer}
 .ac-ok{color:var(--win);margin-right:5px;font-weight:700}
 .ac-meta{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--txt2);flex-shrink:0}
 .ac-type{color:#fff;padding:1px 6px;border-radius:5px;font-size:9px;text-transform:uppercase;letter-spacing:.3px}
-
-/* ===== Visualizador-style theme applied to VGC Tracker ===== */
-:root{
-  --bg:#020d12;
-  --panel:#061820;
-  --panel2:#0a2028;
-  --line:rgba(0,220,255,0.16);
-  --txt:#d8f8ff;
-  --txt2:#5a9aaa;
-  --accent:#00e5ff;
-  --accent2:#b478ff;
-  --win:#80e090;
-  --loss:#f07070;
-  --holo1:#00e5ff;
-  --holo2:#b478ff;
-  --r:14px;
-}
-
-html{background:#010a10;}
-body{
-  background:#010a10;
-  color:var(--txt);
-  background-image:
-    radial-gradient(circle at 15% 5%,rgba(0,229,255,.13),transparent 34%),
-    radial-gradient(circle at 85% 0%,rgba(180,120,255,.12),transparent 32%),
-    radial-gradient(circle at 50% 100%,rgba(0,220,255,.08),transparent 42%),
-    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-}
-
-.topbar{
-  background:rgba(1,10,16,.82);
-  border-bottom:.5px solid rgba(0,220,255,.22);
-  box-shadow:0 0 34px rgba(0,200,255,.08);
-  backdrop-filter:blur(16px);
-}
-.brand .logo{
-  color:var(--txt);
-  background:none;
-  -webkit-background-clip:initial;
-  background-clip:initial;
-  text-shadow:0 0 20px rgba(0,229,255,.28);
-}
-.pokeball{filter:drop-shadow(0 0 10px rgba(0,229,255,.25));opacity:.92;}
-
-.nav button,.tabs button,.btn{
-  font-family:'DM Sans',sans-serif;
-  font-size:11px;
-  font-weight:700;
-  letter-spacing:.8px;
-  text-transform:uppercase;
-  border-radius:20px;
-  border:.5px solid rgba(255,255,255,.16);
-  background:rgba(255,255,255,.05);
-  color:var(--txt);
-  transition:background .15s,border-color .15s,transform .08s,box-shadow .15s;
-}
-.nav button:hover,.tabs button:hover,.btn:hover{
-  background:rgba(255,255,255,.10);
-  border-color:rgba(0,229,255,.38);
-  box-shadow:0 0 18px rgba(0,229,255,.08);
-}
-.nav button.active,.tabs button.active,.btn:not(.ghost):not(.red){
-  background:linear-gradient(135deg,rgba(0,229,255,.20),rgba(180,120,255,.14));
-  border-color:rgba(0,229,255,.42);
-  color:#d8f8ff;
-}
-.btn:active,.nav button:active,.tabs button:active{transform:scale(.97);}
-.btn.ghost{background:rgba(255,255,255,.05);color:var(--txt);}
-.btn.red{
-  background:rgba(240,112,112,.10);
-  border-color:rgba(240,112,112,.34);
-  color:#ff9b9b;
-}
-.btn.sm{padding:7px 13px;font-size:10px;}
-
-.wrap{max-width:1160px;padding:28px 20px 90px;}
-.card,.teamcard,.stat,.list-item,.userrow,.modal{
-  background:linear-gradient(135deg,rgba(0,30,45,.97),rgba(0,15,25,.99));
-  border:.5px solid rgba(0,220,255,.20);
-  border-radius:12px;
-  box-shadow:0 0 30px rgba(0,200,255,.10),0 0 60px rgba(0,150,200,.045),inset 0 0 30px rgba(0,220,255,.02);
-}
-.card{padding:22px;}
-.teamcard{padding:18px;}
-.teamcard::after{display:none;}
-.teamcard:hover,.list-item:hover,.userrow:hover{
-  border-color:rgba(0,229,255,.42);
-  box-shadow:0 0 34px rgba(0,200,255,.14),inset 0 0 30px rgba(0,220,255,.03);
-}
-.section-title{
-  color:var(--txt);
-  letter-spacing:1.1px;
-  text-shadow:0 0 18px rgba(0,229,255,.22);
-}
-.muted,label,.stat .l,.footer-label,.ps-label,.ps-tab-name,.rank{color:var(--txt2);}
-.tag,.pill,.mon,.ability-label,.ev-chip{
-  background:var(--panel2);
-  border:.5px solid rgba(0,220,255,.14);
-  color:var(--txt2);
-  border-radius:20px;
-}
-.pill.win{background:rgba(100,224,144,.10);color:#80e090;border-color:rgba(100,224,144,.28);}
-.pill.loss{background:rgba(240,112,112,.10);color:#f07070;border-color:rgba(240,112,112,.28);}
-
-.field,.ps-field,.ev-stat-input,select.field,textarea.field,input.field{
-  background:rgba(255,255,255,.045);
-  border:.5px solid rgba(255,255,255,.14);
-  color:var(--txt);
-  border-radius:10px;
-  outline:none;
-}
-.field:focus,.ps-field:focus,.ev-stat-input:focus{
-  border-color:rgba(0,229,255,.48);
-  box-shadow:0 0 0 2px rgba(0,229,255,.06);
-}
-select.field,select.ps-field{
-  background-color:rgba(255,255,255,.045);
-}
-select option{background:#061820;color:#d8f8ff;}
-
-.stats{gap:16px;}
-.stat{overflow:hidden;}
-.stat::before{
-  background:radial-gradient(circle at 25% 0%,rgba(0,229,255,.12),transparent 52%);
-}
-.stat .v{color:var(--txt);text-shadow:0 0 18px rgba(0,229,255,.22);}
-.stat.win .v{color:var(--win)}
-.stat.loss .v{color:var(--loss)}
-.stat.wr .v{color:#ffd700}
-.bar{background:rgba(255,255,255,.08);}
-.bar .w{background:#80e090}.bar .l{background:#f07070}
-
-.mon{
-  background:rgba(255,255,255,.035);
-  padding:5px 10px 5px 5px;
-}
-.mon img,.ps-tab-sprite,.ps-sprite-big{filter:drop-shadow(0 4px 12px rgba(0,0,0,.55));}
-.avatar{
-  background:linear-gradient(135deg,rgba(0,229,255,.95),rgba(180,120,255,.92));
-  color:#010a10;
-  box-shadow:0 0 22px rgba(0,229,255,.18);
-}
-
-.modal-bg{background:rgba(0,0,0,.82);backdrop-filter:blur(8px);}
-.modal{max-width:840px;background:#061820;border-color:rgba(0,220,255,.24);}
-.tabs button{padding:11px 14px;border-radius:20px;}
-
-.ps-editor{
-  border:.5px solid rgba(0,220,255,.20);
-  border-radius:14px;
-  background:linear-gradient(135deg,rgba(0,30,45,.97),rgba(0,15,25,.99));
-  box-shadow:inset 0 0 30px rgba(0,220,255,.02);
-}
-.ps-sidebar{
-  background:rgba(255,255,255,.035);
-  border-right:.5px solid rgba(0,220,255,.16);
-}
-.ps-tab{border-bottom:.5px solid rgba(0,220,255,.12);}
-.ps-tab:hover{background:rgba(0,229,255,.06);}
-.ps-tab.ps-active{
-  background:rgba(0,229,255,.08);
-}
-.ps-tab.ps-active::after{background:var(--accent);box-shadow:0 0 12px rgba(0,229,255,.45);}
-.ps-tab-add:hover{background:rgba(0,229,255,.06);color:var(--accent);}
-.ps-header{border-bottom:.5px solid rgba(0,220,255,.16);}
-.ev-stat-bar-wrap{background:rgba(255,255,255,.08);}
-.ev-stat-bar{background:var(--accent);box-shadow:0 0 10px rgba(0,229,255,.35);}
-.ev-stat-bar.ev-full{background:#ffd700;box-shadow:0 0 10px rgba(255,215,0,.35);}
-.ev-total-badge.ev-ok{color:#80e090!important;}
-.ev-total-badge.ev-over{color:#f07070!important;}
-.ps-del-btn{
-  border-radius:20px;
-  background:rgba(240,112,112,.10);
-  border:.5px solid rgba(240,112,112,.34);
-  color:#ff9b9b;
-}
-
-.ac-list{
-  background:#061820;
-  border:.5px solid rgba(0,229,255,.42);
-  box-shadow:0 12px 40px rgba(0,0,0,.8),0 0 24px rgba(0,229,255,.08);
-}
-.ac-item.active,.ac-item:hover{background:rgba(0,229,255,.10);}
-.ac-item b{color:var(--accent);}
-.err{color:#f07070;}
-a{color:var(--accent);}
-.empty{color:var(--txt2);}
-@keyframes trackerFadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-.card,.teamcard,.stat,.list-item,.userrow{animation:trackerFadeUp .35s ease both;}
-
 </style>
 </head>
 <body>
@@ -431,40 +247,6 @@ const SUPABASE_ANON_KEY = "sb_publishable_BmCm5m4O7MypoqQV2TAnKQ_iSIY8rqM";
 const configured = SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length > 20;
 let sb = null;
 if (configured) sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-
-const BUILDER_LEVEL = '50';
-const STAT_BUDGET = 66;
-const STAT_MAX = 66;
-const STAT_KEYS_BUILD = ['hp','atk','def','spa','spd','spe'];
-function statTotal(evs){ return STAT_KEYS_BUILD.reduce((s,k)=>s+(parseInt(evs?.[k],10)||0),0); }
-function clampStatPoint(v){ v=parseInt(v,10); return Number.isFinite(v) ? Math.max(0, Math.min(STAT_MAX, v)) : 0; }
-function normalizeStatPoints(evs){
-  evs = evs || {};
-  const raw = {};
-  STAT_KEYS_BUILD.forEach(k=>{ raw[k]=parseInt(evs[k],10)||0; });
-  let total = STAT_KEYS_BUILD.reduce((s,k)=>s+raw[k],0);
-  // Si viene de Showdown con EVs clásicos, convertir a puntos reales de stat aprox. nivel 50.
-  if (STAT_KEYS_BUILD.some(k=>raw[k]>STAT_MAX) || total>STAT_BUDGET) {
-    STAT_KEYS_BUILD.forEach(k=>{ raw[k]=Math.max(0, Math.round(raw[k]/8)); });
-  }
-  const clean = {};
-  let used = 0;
-  STAT_KEYS_BUILD.forEach(k=>{
-    const room = Math.max(0, STAT_BUDGET-used);
-    const v = Math.min(clampStatPoint(raw[k]), room);
-    if(v>0) clean[k]=v;
-    used += v;
-  });
-  return clean;
-}
-function normalizeMonBuild(p){
-  p = p || {};
-  p.level = BUILDER_LEVEL;
-  p.evs = normalizeStatPoints(p.evs || {});
-  delete p.ivs;
-  return p;
-}
 
 const PKDATA={
 mons:["Ababo","Abomasnow","Abomasnow-Mega","Abra","Absol","Absol-Mega","Absol-Mega-Z","Accelgor","Aegislash","Aegislash-Blade","Aerodactyl","Aerodactyl-Mega","Aggron","Aggron-Mega","Aipom","Alakazam","Alakazam-Mega","Alcremie","Alcremie-Caramel-Swirl","Alcremie-Gmax","Alcremie-Lemon-Cream","Alcremie-Matcha-Cream","Alcremie-Mint-Cream","Alcremie-Rainbow-Swirl","Alcremie-Ruby-Cream","Alcremie-Ruby-Swirl","Alomomola","Altaria","Altaria-Mega","Amaura","Ambipom","Amoonguss","Ampharos","Ampharos-Mega","Annihilape","Anorith","Appletun","Appletun-Gmax","Applin","Araquanid","Araquanid-Totem","Arbok","Arboliva","Arcanine","Arcanine-Hisui","Arceus","Arceus-Bug","Arceus-Dark","Arceus-Dragon","Arceus-Electric","Arceus-Fairy","Arceus-Fighting","Arceus-Fire","Arceus-Flying","Arceus-Ghost","Arceus-Grass","Arceus-Ground","Arceus-Ice","Arceus-Poison","Arceus-Psychic","Arceus-Rock","Arceus-Steel","Arceus-Water","Archaludon","Archen","Archeops","Arctibax","Arctovish","Arctozolt","Argalis","Arghonaut","Ariados","Armaldo","Armarouge","Aromatisse","Aron","Arrokuda","Articuno","Articuno-Galar","Astrolotl","Audino","Audino-Mega","Aurorus","Aurumoth","Avalugg","Avalugg-Hisui","Axew","Azelf","Azumarill","Azurill","Bagon","Baltoy","Banette","Banette-Mega","Barbaracle","Barbaracle-Mega","Barboach","Barraskewda","Basculegion","Basculegion-F","Basculin","Basculin-Blue-Striped","Basculin-White-Striped","Bastiodon","Baxcalibur","Baxcalibur-Mega","Bayleef","Beartic","Beautifly","Beedrill","Beedrill-Mega","Beheeyem","Beldum","Bellibolt","Bellossom","Bellsprout","Bergmite","Bewear","Bibarel","Bidoof","Binacle","Bisharp","Blacephalon","Blastoise","Blastoise-Gmax","Blastoise-Mega","Blaziken","Blaziken-Mega","Blipbug","Blissey","Blitzle","Boldore","Boltund","Bombirdier","Bonsly","Bouffalant","Bounsweet","Braixen","Brambleghast","Bramblin","Brattler","Braviary","Braviary-Hisui","Breezi","Breloom","Brionne","Bronzong","Bronzor","Brute Bonnet","Bruxish","Budew","Buizel","Bulbasaur","Buneary","Bunnelby","Burmy","Burmy-Sandy","Burmy-Trash","Butterfree","Butterfree-Gmax","Buzzwole","Cacnea","Cacturne","Caimanoe","Calyrex","Calyrex-Ice","Calyrex-Shadow","Camerupt","Camerupt-Mega","Capsakid","Carbink","Caribolt","Carkol","Carnivine","Carracosta","Carvanha","Cascoon","Castform","Castform-Rainy","Castform-Snowy","Castform-Sunny","Caterpie","Cawdet","Cawmodore","Celebi","Celesteela","Centiskorch","Centiskorch-Gmax","Ceruledge","Cetitan","Cetoddle","Chandelure","Chandelure-Mega","Chansey","Charcadet","Charizard","Charizard-Gmax","Charizard-Mega-X","Charizard-Mega-Y","Charjabug","Charmander","Charmeleon","Chatot","Cherrim","Cherrim-Sunshine","Cherubi","Chesnaught","Chesnaught-Mega","Chespin","Chewtle","Chi-Yu","Chien-Pao","Chikorita","Chimchar","Chimecho","Chimecho-Mega","Chinchou","Chingling","Chromera","Chuggalong","Chuggon","Cinccino","Cinderace","Cinderace-Gmax","Clamperl","Clauncher","Clawitzer","Claydol","Clefable","Clefable-Mega","Clefairy","Cleffa","Clobbopus","Clodsire","Cloyster","Coalossal","Coalossal-Gmax","Cobalion","Cofagrigus","Colossoil","Combee","Combusken","Comfey","Conkeldurr","Copperajah","Copperajah-Gmax","Coribalis","Corphish","Corsola","Corsola-Galar","Corviknight","Corviknight-Gmax","Corvisquire","Cosmoem","Cosmog","Cottonee","Crabominable","Crabominable-Mega","Crabrawler","Cradily","Cramorant","Cramorant-Gorging","Cramorant-Gulping","Cranidos","Crawdaunt","Cresceidon","Cresselia","Croagunk","Crobat","Crocalor","Croconaw","Crucibelle","Crucibelle-Mega","Crustle","Cryogonal","Cubchoo","Cubone","Cufant","Cupra","Cursola","Cutiefly","Cyclizar","Cyclohm","Cyndaquil","Dachsbun","Darkrai","Darkrai-Mega","Darmanitan","Darmanitan-Galar","Darmanitan-Galar-Zen","Darmanitan-Zen","Dartrix","Darumaka","Darumaka-Galar","Decidueye","Decidueye-Hisui","Dedenne","Deerling","Deerling-Autumn","Deerling-Summer","Deerling-Winter","Deino","Delcatty","Delibird","Delphox","Delphox-Mega","Deoxys","Deoxys-Attack","Deoxys-Defense","Deoxys-Speed","Dewgong","Dewott","Dewpider","Dhelmise","Dialga","Dialga-Origin","Diancie","Diancie-Mega","Diggersby","Diglett","Diglett-Alola","Dipplin","Ditto","Dodrio","Doduo","Dolliv","Dondozo","Donphan","Dorsoil","Dottler","Doublade","Dracovish","Dracozolt","Dragalge","Dragalge-Mega","Dragapult","Draggalong","Dragonair","Dragonite","Dragonite-Mega","Drakloak","Drampa","Drampa-Mega","Drapion","Dratini","Drednaw","Drednaw-Gmax","Dreepy","Drifblim","Drifloon","Drilbur","Drizzile","Drowzee","Druddigon","Dubwool","Ducklett","Dudunsparce","Dudunsparce-Three-Segment","Dugtrio","Dugtrio-Alola","Dunsparce","Duohm","Duosion","Duraludon","Duraludon-Gmax","Durant","Dusclops","Dusknoir","Duskull","Dustox","Dwebble","Eelektrik","Eelektross","Eelektross-Mega","Eevee","Eevee-Gmax","Eevee-Starter","Eiscue","Eiscue-Noice","Ekans","Eldegoss","Electabuzz","Electivire","Electrelk","Electrike","Electrode","Electrode-Hisui","Elekid","Elgyem","Embirch","Emboar","Emboar-Mega","Emolga","Empoleon","Enamorus","Enamorus-Therian","Entei","Equilibra","Escavalier","Espathra","Espeon","Espurr","Eternatus","Eternatus-Eternamax","Excadrill","Excadrill-Mega","Exeggcute","Exeggutor","Exeggutor-Alola","Exploud","Falinks","Falinks-Mega","Farfetch’d","Farfetch’d-Galar","Farigiraf","Fawnifer","Fearow","Feebas","Fennekin","Feraligatr","Feraligatr-Mega","Ferroseed","Ferrothorn","Fezandipiti","Fidgit","Fidough","Finizen","Finneon","Flaaffy","Flabébé","Flamigo","Flapple","Flapple-Gmax","Flarelm","Flareon","Fletchinder","Fletchling","Flittle","Floatoy","Floatzel","Floette","Floette-Eternal","Floette-Mega","Floragato","Florges","Flox","Flutter Mane","Flygon","Fomantis","Foongus","Forretress","Fraxure","Frigibax","Frillish","Froakie","Frogadier","Froslass","Froslass-Mega","Frosmoth","Fuecoco","Furfrou","Furret","Gabite","Gallade","Gallade-Mega","Galvantula","Garbodor","Garbodor-Gmax","Garchomp","Garchomp-Mega","Garchomp-Mega-Z","Gardevoir","Gardevoir-Mega","Garganacl","Gastly","Gastrodon","Gastrodon-East","Genesect","Genesect-Burn","Genesect-Chill","Genesect-Douse","Genesect-Shock","Gengar","Gengar-Gmax","Gengar-Mega","Geodude","Geodude-Alola","Gholdengo","Gible","Gigalith","Gimmighoul","Gimmighoul-Roaming","Girafarig","Giratina","Giratina-Origin","Glaceon","Glalie","Glalie-Mega","Glameow","Glastrier","Gligar","Glimmet","Glimmora","Glimmora-Mega","Gliscor","Gloom","Gogoat","Golbat","Goldeen","Golduck","Golem","Golem-Alola","Golett","Golisopod","Golisopod-Mega","Golurk","Golurk-Mega","Goodra","Goodra-Hisui","Goomy","Gorebyss","Gossifleur","Gothita","Gothitelle","Gothorita","Gouging Fire","Gourgeist","Gourgeist-Large","Gourgeist-Small","Gourgeist-Super","Grafaiai","Granbull","Grapploct","Graveler","Graveler-Alola","Great Tusk","Greavard","Greedent","Greninja","Greninja-Ash","Greninja-Bond","Greninja-Mega","Grimer","Grimer-Alola","Grimmsnarl","Grimmsnarl-Gmax","Grookey","Grotle","Groudon","Groudon-Primal","Grovyle","Growlithe","Growlithe-Hisui","Grubbin","Grumpig","Gulpin","Gumshoos","Gumshoos-Totem","Gurdurr","Guzzlord","Gyarados","Gyarados-Mega","Hakamo-o","Happiny","Hariyama","Hatenna","Hatterene","Hatterene-Gmax","Hattrem","Haunter","Hawlucha","Hawlucha-Mega","Haxorus","Heatmor","Heatran","Heatran-Mega","Heliolisk","Helioptile","Hemogoblin","Heracross","Heracross-Mega","Herdier","Hippopotas","Hippowdon","Hitmonchan","Hitmonlee","Hitmontop","Ho-Oh","Honchkrow","Honedge","Hoopa","Hoopa-Unbound","Hoothoot","Hoppip","Horsea","Houndoom","Houndoom-Mega","Houndour","Houndstone","Huntail","Hydrapple","Hydreigon","Hypno","Igglybuff","Illumise","Impidimp","Incineroar","Indeedee","Indeedee-F","Infernape","Inkay","Inteleon","Inteleon-Gmax","Iron Boulder","Iron Bundle","Iron Crown","Iron Hands","Iron Jugulis","Iron Leaves","Iron Moth","Iron Thorns","Iron Treads","Iron Valiant","Ivysaur","Jangmo-o","Jellicent","Jigglypuff","Jirachi","Jolteon","Joltik","Jumbao","Jumpluff","Justyke","Jynx","Kabuto","Kabutops","Kadabra","Kakuna","Kangaskhan","Kangaskhan-Mega","Karrablast","Kartana","Kecleon","Keldeo","Keldeo-Resolute","Kerfluffle","Kilowattrel","Kingambit","Kingdra","Kingler","Kingler-Gmax","Kirlia","Kitsunoh","Klang","Klawf","Kleavor","Klefki","Klink","Klinklang","Koffing","Komala","Kommo-o","Kommo-o-Totem","Koraidon","Krabby","Kricketot","Kricketune","Krilowatt","Krokorok","Krookodile","Kubfu","Kyogre","Kyogre-Primal","Kyurem","Kyurem-Black","Kyurem-White","Lairon","Lampent","Landorus","Landorus-Therian","Lanturn","Lapras","Lapras-Gmax","Larvesta","Larvitar","Latias","Latias-Mega","Latios","Latios-Mega","Leafeon","Leavanny","Lechonk","Ledian","Ledyba","Lickilicky","Lickitung","Liepard","Lileep","Lilligant","Lilligant-Hisui","Lillipup","Linoone","Linoone-Galar","Litleo","Litten","Litwick","Lokix","Lombre","Lopunny","Lopunny-Mega","Lotad","Loudred","Lucario","Lucario-Mega","Lucario-Mega-Z","Ludicolo","Lugia","Lumineon","Lunala","Lunatone","Lurantis","Lurantis-Totem","Luvdisc","Luxio","Luxray","Lycanroc","Lycanroc-Dusk","Lycanroc-Midnight","Mabosstiff","Machamp","Machamp-Gmax","Machoke","Machop","Magby","Magcargo","Magearna","Magearna-Mega","Magearna-Original","Magearna-Original-Mega","Magikarp","Magmar","Magmortar","Magnemite","Magneton","Magnezone","Makuhita","Malaconda","Malamar","Malamar-Mega","Mamoswine","Manaphy","Mandibuzz","Manectric","Manectric-Mega","Mankey","Mantine","Mantyke","Maractus","Mareanie","Mareep","Marill","Marowak","Marowak-Alola","Marowak-Alola-Totem","Marshadow","Marshtomp","Maschiff","Masquerain","Maushold","Maushold-Four","Mawile","Mawile-Mega","Medicham","Medicham-Mega","Meditite","Meganium","Meganium-Mega","Melmetal","Melmetal-Gmax","Meloetta","Meloetta-Pirouette","Meltan","Meowscarada","Meowstic","Meowstic-F","Meowstic-F-Mega","Meowstic-M-Mega","Meowth","Meowth-Alola","Meowth-Galar","Meowth-Gmax","Mesprit","Metagross","Metagross-Mega","Metang","Metapod","Mew","Mewtwo","Mewtwo-Mega-X","Mewtwo-Mega-Y","Miasmaw","Miasmite","Mienfoo","Mienshao","Mightyena","Milcery","Milotic","Miltank","Mime Jr.","Mimikyu","Mimikyu-Busted","Mimikyu-Busted-Totem","Mimikyu-Totem","Minccino","Minior","Minior-Blue","Minior-Green","Minior-Indigo","Minior-Meteor","Minior-Orange","Minior-Violet","Minior-Yellow","Minun","Miraidon","Misdreavus","Mismagius","MissingNo.","Mollux","Moltres","Moltres-Galar","Monferno","Monohm","Morelull","Morgrem","Morpeko","Morpeko-Hangry","Mothim","Mr. Mime","Mr. Mime-Galar","Mr. Rime","Mudbray","Mudkip","Mudsdale","Muk","Muk-Alola","Mumbao","Munchlax","Munkidori","Munna","Murkrow","Musharna","Nacli","Naclstack","Naganadel","Natu","Naviathan","Necrozma","Necrozma-Dawn-Wings","Necrozma-Dusk-Mane","Necrozma-Ultra","Necturine","Necturna","Nickit","Nidoking","Nidoqueen","Nidoran-F","Nidoran-M","Nidorina","Nidorino","Nihilego","Nincada","Ninetales","Ninetales-Alola","Ninjask","Noctowl","Nohface","Noibat","Noivern","Nosepass","Numel","Nuzleaf","Nymble","Obstagoon","Octillery","Oddish","Ogerpon","Ogerpon-Cornerstone","Ogerpon-Cornerstone-Tera","Ogerpon-Hearthflame","Ogerpon-Hearthflame-Tera","Ogerpon-Teal-Tera","Ogerpon-Wellspring","Ogerpon-Wellspring-Tera","Oinkologne","Oinkologne-F","Okidogi","Omanyte","Omastar","Onix","Oranguru","Orbeetle","Orbeetle-Gmax","Oricorio","Oricorio-Pa'u","Oricorio-Pom-Pom","Oricorio-Sensu","Orthworm","Oshawott","Overqwil","Pachirisu","Pajantom","Palafin","Palafin-Hero","Palkia","Palkia-Origin","Palossand","Palpitoad","Pancham","Pangoro","Panpour","Pansage","Pansear","Paras","Parasect","Passimian","Patrat","Pawmi","Pawmo","Pawmot","Pawniard","Pecharunt","Pelipper","Perrserker","Persian","Persian-Alola","Petilil","Phanpy","Phantump","Pheromosa","Phione","Pichu","Pichu-Spiky-eared","Pidgeot","Pidgeot-Mega","Pidgeotto","Pidgey","Pidove","Pignite","Pikachu","Pikachu-Alola","Pikachu-Belle","Pikachu-Cosplay","Pikachu-Gmax","Pikachu-Hoenn","Pikachu-Kalos","Pikachu-Libre","Pikachu-Original","Pikachu-Partner","Pikachu-PhD","Pikachu-Pop-Star","Pikachu-Rock-Star","Pikachu-Sinnoh","Pikachu-Starter","Pikachu-Unova","Pikachu-World","Pikipek","Piloswine","Pincurchin","Pineco","Pinsir","Pinsir-Mega","Piplup","Plasmanta","Pluffle","Plusle","Poipole","Pokestar Black Belt","Pokestar Black Door","Pokestar Brycen-Man","Pokestar F-00","Pokestar F-002","Pokestar Giant","Pokestar Humanoid","Pokestar Monster","Pokestar MT","Pokestar MT2","Pokestar Smeargle","Pokestar Spirit","Pokestar Transport","Pokestar UFO","Pokestar UFO-2","Pokestar UFO-PropU2","Pokestar White Door","Politoed","Poliwag","Poliwhirl","Poliwrath","Poltchageist","Poltchageist-Artisan","Polteageist","Polteageist-Antique","Ponyta","Ponyta-Galar","Poochyena","Popplio","Porygon","Porygon-Z","Porygon2","Primarina","Primeape","Prinplup","Privatyke","Probopass","Protowatt","Psyduck","Pumpkaboo","Pumpkaboo-Large","Pumpkaboo-Small","Pumpkaboo-Super","Pupitar","Purrloin","Purugly","Pyroak","Pyroar","Pyroar-Mega","Pyukumuku","Quagsire","Quaquaval","Quaxly","Quaxwell","Quilava","Quilladin","Qwilfish","Qwilfish-Hisui","Raboot","Rabsca","Raging Bolt","Raichu","Raichu-Alola","Raichu-Mega-X","Raichu-Mega-Y","Raikou","Ralts","Ramnarok","Ramnarok-Radiant","Rampardos","Rapidash","Rapidash-Galar","Raticate","Raticate-Alola","Raticate-Alola-Totem","Rattata","Rattata-Alola","Rayquaza","Rayquaza-Mega","Rebble","Regice","Regidrago","Regieleki","Regigigas","Regirock","Registeel","Relicanth","Rellor","Remoraid","Reshiram","Reuniclus","Revavroom","Revenankh","Rhydon","Rhyhorn","Rhyperior","Ribombee","Ribombee-Totem","Rillaboom","Rillaboom-Gmax","Riolu","Roaring Moon","Rockruff","Rockruff-Dusk","Roggenrola","Rolycoly","Rookidee","Roselia","Roserade","Rotom","Rotom-Fan","Rotom-Frost","Rotom-Heat","Rotom-Mow","Rotom-Wash","Rowlet","Rufflet","Runerigus","Sableye","Sableye-Mega","Saharaja","Saharascal","Salamence","Salamence-Mega","Salandit","Salazzle","Salazzle-Totem","Samurott","Samurott-Hisui","Sandaconda","Sandaconda-Gmax","Sandile","Sandshrew","Sandshrew-Alola","Sandslash","Sandslash-Alola","Sandy Shocks","Sandygast","Sawk","Sawsbuck","Scatterbug","Scattervein","Sceptile","Sceptile-Mega","Scizor","Scizor-Mega","Scolipede","Scolipede-Mega","Scorbunny","Scovillain","Scovillain-Mega","Scrafty","Scrafty-Mega","Scraggy","Scratchet","Scream Tail","Scyther","Seadra","Seaking","Sealeo","Seedot","Seel","Seismitoad","Sentret","Serperior","Servine","Seviper","Sewaddle","Sharpedo","Sharpedo-Mega","Shaymin","Shaymin-Sky","Shedinja","Shelgon","Shellder","Shellos","Shellos-East","Shelmet","Shieldon","Shiftry","Shiinotic","Shinx","Shox","Shroodle","Shroomish","Shuckle","Shuppet","Sigilyph","Silcoon","Silicobra","Silvally","Silvally-Bug","Silvally-Dark","Silvally-Dragon","Silvally-Electric","Silvally-Fairy","Silvally-Fighting","Silvally-Fire","Silvally-Flying","Silvally-Ghost","Silvally-Grass","Silvally-Ground","Silvally-Ice","Silvally-Poison","Silvally-Psychic","Silvally-Rock","Silvally-Steel","Silvally-Water","Simipour","Simisage","Simisear","Sinistcha","Sinistcha-Masterpiece","Sinistea","Sinistea-Antique","Sirfetch’d","Sizzlipede","Skarmory","Skarmory-Mega","Skeledirge","Skiddo","Skiploom","Skitty","Skorupi","Skrelp","Skuntank","Skwovet","Slaking","Slakoth","Sliggoo","Sliggoo-Hisui","Slither Wing","Slowbro","Slowbro-Galar","Slowbro-Mega","Slowking","Slowking-Galar","Slowpoke","Slowpoke-Galar","Slugma","Slurpuff","Smeargle","Smogecko","Smoguana","Smokomodo","Smoliv","Smoochum","Snaelstrom","Sneasel","Sneasel-Hisui","Sneasler","Snivy","Snom","Snorlax","Snorlax-Gmax","Snorunt","Snover","Snubbull","Snugglow","Sobble","Solgaleo","Solosis","Solotl","Solrock","Spearow","Spectrier","Spewpa","Spheal","Spidops","Spinarak","Spinda","Spiritomb","Spoink","Sprigatito","Spritzee","Squawkabilly","Squawkabilly-Blue","Squawkabilly-White","Squawkabilly-Yellow","Squirtle","Stakataka","Stantler","Staraptor","Staraptor-Mega","Staravia","Starly","Starmie","Starmie-Mega","Staryu","Steelix","Steelix-Mega","Steenee","Stonjourner","Stoutland","Stratagem","Stufful","Stunfisk","Stunfisk-Galar","Stunky","Sudowoodo","Suicune","Sunflora","Sunkern","Surskit","Swablu","Swadloon","Swalot","Swampert","Swampert-Mega","Swanna","Swellow","Swinub","Swirlix","Swirlpool","Swoobat","Syclant","Syclar","Sylveon","Tactite","Tadbulb","Taillow","Talonflame","Tandemaus","Tangela","Tangrowth","Tapu Bulu","Tapu Fini","Tapu Koko","Tapu Lele","Tarountula","Tatsugiri","Tatsugiri-Curly-Mega","Tatsugiri-Droopy","Tatsugiri-Droopy-Mega","Tatsugiri-Stretchy","Tatsugiri-Stretchy-Mega","Tauros","Tauros-Paldea-Aqua","Tauros-Paldea-Blaze","Tauros-Paldea-Combat","Teddiursa","Tentacool","Tentacruel","Tepig","Terapagos","Terapagos-Stellar","Terapagos-Terastal","Terrakion","Thievul","Throh","Thundurus","Thundurus-Therian","Thwackey","Timburr","Ting-Lu","Tinkatink","Tinkaton","Tinkatuff","Tirtouga","Toedscool","Toedscruel","Togedemaru","Togedemaru-Totem","Togekiss","Togepi","Togetic","Tomohawk","Torchic","Torkoal","Tornadus","Tornadus-Therian","Torracat","Torterra","Totodile","Toucannon","Toxapex","Toxel","Toxicroak","Toxtricity","Toxtricity-Gmax","Toxtricity-Low-Key","Toxtricity-Low-Key-Gmax","Tranquill","Trapinch","Treecko","Trevenant","Tropius","Trubbish","Trumbeak","Tsareena","Turtonator","Turtwig","Tympole","Tynamo","Type: Null","Typhlosion","Typhlosion-Hisui","Tyranitar","Tyranitar-Mega","Tyrantrum","Tyrogue","Tyrunt","Umbreon","Unfezant","Unown","Ursaluna","Ursaluna-Bloodmoon","Ursaring","Urshifu","Urshifu-Gmax","Urshifu-Rapid-Strike","Urshifu-Rapid-Strike-Gmax","Uxie","Vanillish","Vanillite","Vanilluxe","Vaporeon","Varoom","Veluza","Venipede","Venomicon","Venomicon-Epilogue","Venomoth","Venonat","Venusaur","Venusaur-Gmax","Venusaur-Mega","Vespiquen","Vibrava","Victini","Victreebel","Victreebel-Mega","Vigoroth","Vikavolt","Vikavolt-Totem","Vileplume","Virizion","Vivillon","Vivillon-Archipelago","Vivillon-Continental","Vivillon-Elegant","Vivillon-Fancy","Vivillon-Garden","Vivillon-High Plains","Vivillon-Icy Snow","Vivillon-Jungle","Vivillon-Marine","Vivillon-Modern","Vivillon-Monsoon","Vivillon-Ocean","Vivillon-Pokeball","Vivillon-Polar","Vivillon-River","Vivillon-Sandstorm","Vivillon-Savanna","Vivillon-Sun","Vivillon-Tundra","Volbeat","Volcanion","Volcarona","Volkraken","Volkritter","Voltorb","Voltorb-Hisui","Voodoll","Voodoom","Vullaby","Vulpix","Vulpix-Alola","Wailmer","Wailord","Walking Wake","Walrein","Wartortle","Watchog","Wattrel","Weavile","Weedle","Weepinbell","Weezing","Weezing-Galar","Whimsicott","Whirlipede","Whiscash","Whismur","Wigglytuff","Wiglett","Wimpod","Wingull","Wishiwashi","Wishiwashi-School","Wo-Chien","Wobbuffet","Woobat","Wooloo","Wooper","Wooper-Paldea","Wormadam","Wormadam-Sandy","Wormadam-Trash","Wugtrio","Wurmple","Wynaut","Wyrdeer","Xatu","Xerneas","Xerneas-Neutral","Xurkitree","Yamask","Yamask-Galar","Yamper","Yanma","Yanmega","Yungoos","Yveltal","Zacian","Zacian-Crowned","Zamazenta","Zamazenta-Crowned","Zangoose","Zapdos","Zapdos-Galar","Zarude","Zarude-Dada","Zebstrika","Zekrom","Zeraora","Zeraora-Mega","Zigzagoon","Zigzagoon-Galar","Zoroark","Zoroark-Hisui","Zorua","Zorua-Hisui","Zubat","Zweilous","Zygarde","Zygarde-10%","Zygarde-Complete","Zygarde-Mega"],
@@ -590,7 +372,6 @@ document.addEventListener('focusout',e=>{ if(e.target.dataset && e.target.datase
 
 
 let me = null;        // perfil propio
-let isLoggingOut = false;
 let view = 'home';    // home | teams | matches | search | profile
 let viewedUser = null;
 
@@ -629,27 +410,7 @@ async function doAuth(){
   }catch(e){ $('auErr').style.color='var(--loss)'; $('auErr').textContent=e.message; }
   $('auBtn').disabled=false;
 }
-async function logout(){
-  isLoggingOut = true;
-  me=null; recovering=false; viewedUser=null; view='home';
-  try { closeModal(); } catch(e) {}
-  try {
-    Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-') || k.toLowerCase().includes('supabase')) localStorage.removeItem(k); });
-    Object.keys(sessionStorage).forEach(k=>{ if(k.startsWith('sb-') || k.toLowerCase().includes('supabase')) sessionStorage.removeItem(k); });
-  } catch(e) {}
-  try {
-    $('app').classList.add('hidden');
-    $('authView').classList.remove('hidden');
-    $('topbar').classList.add('hidden');
-  } catch(e) {}
-  Promise.race([
-    sb.auth.signOut({scope:'global'}),
-    new Promise(resolve=>setTimeout(resolve,900))
-  ]).catch(e=>console.warn('signOut falló:', e)).finally(()=>{
-    window.location.replace(window.location.pathname + window.location.search);
-  });
-}
-
+async function logout(){ await sb.auth.signOut(); localStorage.clear(); me=null; recovering=false; route(); }
 
 /* ---- recuperación de contraseña ---- */
 let recovering = false;
@@ -785,16 +546,29 @@ async function renderTeams(){
 }
 function teamCard(t,own){
   const mons=(t.pokemon||[]).slice(0,6);
-  teamCache[t.id]=t; // para visualizar/editar sin re-fetch
+  teamCache[t.id]=t;
+  const monHTML = mons.length
+    ? mons.map(p=>`<div class="mon">
+        <div class="mon-sprite"><img src="${SPRITE(p.name,p.shiny)}" onerror="this.style.display='none'" alt=""></div>
+        <div class="mon-info">
+          <div class="mon-name">${esc(p.name||'???')}</div>
+          <div class="mon-item">${p.item ? '⊙ '+esc(p.item) : '<span style="opacity:0.4">Sin ítem</span>'}</div>
+        </div>
+      </div>`).join('')
+    : '<div class="muted" style="grid-column:1/-1;padding:8px 0">Sin pokémon</div>';
   return `<div class="teamcard">
-    <div class="teamhead"><div><div class="bebas" style="font-size:20px">${esc(t.name)}</div>
-      <span class="tag">${t.is_public?'Público':'Privado'}</span></div>
-      <div class="row" style="gap:6px">
-        <button class="btn ghost sm" onclick="visualizeTeam('${t.id}')">👁 Visualización</button>
-        ${own?`<button class="btn ghost sm" onclick="editTeamById('${t.id}')">Editar</button>
-        <button class="btn red sm" onclick="delTeam('${t.id}')">✕</button>`:''}
-      </div></div>
-    <div class="mons">${mons.map(p=>`<span class="mon"><img src="${SPRITE(p.name,p.shiny)}" onerror="this.style.display='none'" alt="">${esc(p.name)}</span>`).join('')||'<span class="muted">Sin pokémon</span>'}</div>
+    <div class="teamhead">
+      <div>
+        <div class="bebas" style="font-size:20px">${esc(t.name)}</div>
+        <span class="tag">${t.is_public?'Público':'Privado'}</span>
+      </div>
+    </div>
+    <div class="mons">${monHTML}</div>
+    <div class="team-actions">
+      <button class="btn ghost sm" style="flex:1" onclick="visualizeTeam('${t.id}')">👁 Ver</button>
+      ${own?`<button class="btn ghost sm" style="flex:1" onclick="editTeamById('${t.id}')">✏ Editar</button>
+      <button class="btn red sm" style="flex:1" onclick="delTeam('${t.id}')">🗑 Borrar</button>`:''}
+    </div>
   </div>`;
 }
 let teamCache={};
@@ -813,7 +587,7 @@ function openTeam(t){
   // estado de edición en memoria
   window._psTab=0;
   teamDraft={ id:t.id||'', name:t.name||'', is_public:t.is_public!==false,
-              pokemon:JSON.parse(JSON.stringify(t.pokemon||[])).map(normalizeMonBuild) };
+              pokemon:JSON.parse(JSON.stringify(t.pokemon||[])) };
   teamTab='editor';
   if(!teamDraft.pokemon.length) teamTab='import';
   renderTeamModal();
@@ -848,7 +622,7 @@ function importPane(){
 function applyImport(){
   const mons=parsePaste($('tPaste').value);
   if(!mons.length){ $('tErr').textContent='No pude leer ningún Pokémon. Revisá el formato.'; return; }
-  teamDraft.pokemon=mons.map(normalizeMonBuild); window._psTab=0; teamTab='editor'; renderTeamModal();
+  teamDraft.pokemon=mons; teamTab='editor'; renderTeamModal();
 }
 function copyExport(){
   const txt=exportShowdown(teamDraft.pokemon);
@@ -856,8 +630,7 @@ function copyExport(){
 }
 function editorPane(){
   const mons = teamDraft.pokemon;
-  if(!mons.length) return `<div class="muted" style="padding:20px 0">Agregá un Pokémon o usá la pestaña Importar.</div>
-    <button class="btn ghost sm" style="margin-top:8px" onclick="addMon()">＋ Agregar Pokémon</button>`;
+  if(!mons.length) return `<div class="muted" style="padding:20px 0">Agregá un Pokémon o usá la pestaña Importar.</div>`;
   // currentPsTab is a global index
   if(typeof window._psTab==='undefined') window._psTab=0;
   window._psTab = Math.min(window._psTab, mons.length-1);
@@ -888,22 +661,29 @@ function monInfoBadges(name){
   </div>`;
 }
 function evBar(i, stat, label){
-  const val = clampStatPoint(teamDraft.pokemon[i].evs[stat]||0);
-  const total = statTotal(teamDraft.pokemon[i].evs);
-  const over = total>STAT_BUDGET;
-  const pct = Math.min(100, Math.round(val/STAT_MAX*100));
-  const full = val>=STAT_MAX;
+  const val = teamDraft.pokemon[i].evs[stat]||0;
+  const total = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(teamDraft.pokemon[i].evs[k]||0),0);
+  const over = total>508;
+  const pct = Math.min(100, Math.round(val/252*100));
+  const full = val>=252;
   return `<div class="ev-stat-row">
     <span class="ev-stat-label">${label}</span>
     <div class="ev-stat-bar-wrap"><div class="ev-stat-bar${full?' ev-full':''}" style="width:${pct}%"></div></div>
-    <input class="ev-stat-input" type="number" min="0" max="${STAT_MAX}" placeholder="0" value="${val||''}"
+    <input class="ev-stat-input" type="number" min="0" max="252" placeholder="0" value="${val||''}"
       oninput="setStat(${i},'evs','${stat}',this.value);debouncedEvRefresh(${i})">
   </div>`;
 }
-function ivInput(i, stat, label){ return ''; }
+function ivInput(i, stat, label){
+  const val = teamDraft.pokemon[i].ivs[stat];
+  return `<div style="text-align:center">
+    <div style="font-size:9px;color:var(--txt2);margin-bottom:2px">${label}</div>
+    <input class="ev-stat-input" style="width:100%" type="number" min="0" max="31" placeholder="31" value="${val!=null?val:''}"
+      oninput="setStat(${i},'ivs','${stat}',this.value)">
+  </div>`;
+}
 function monEditor(p, i){
-  const evTotal = statTotal(p.evs);
-  const evOver = evTotal>STAT_BUDGET;
+  const evTotal = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
+  const evOver = evTotal>508;
   return `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <span style="font-size:11px;color:var(--txt2)">Pokémon ${i+1} de ${teamDraft.pokemon.length}</span>
@@ -962,7 +742,8 @@ function monEditor(p, i){
       <div style="display:flex;gap:4px">
         <input class="ps-field" placeholder="Mote" value="${esc(p.nickname)}"
           oninput="setMon(${i},'nickname',this.value)" style="flex:1">
-        <input class="ps-field" placeholder="50" value="${BUILDER_LEVEL}" readonly disabled style="width:46px;opacity:.85">
+        <input class="ps-field" placeholder="50" value="${esc(p.level)}"
+          oninput="setMon(${i},'level',this.value)" style="width:46px">
       </div>
     </div>
   </div>
@@ -970,7 +751,7 @@ function monEditor(p, i){
   <div class="ps-section">
     <div class="ps-label">
       <span>EVs</span>
-      <span id="evtotal-${i}" class="ev-total-badge${evOver?' ev-over':' ev-ok'}">${evTotal}/${STAT_BUDGET}</span>
+      <span id="evtotal-${i}" class="ev-total-badge${evOver?' ev-over':' ev-ok'}">${evTotal}/508</span>
     </div>
     ${evBar(i,'hp','HP')}
     ${evBar(i,'atk','Atk')}
@@ -980,6 +761,13 @@ function monEditor(p, i){
     ${evBar(i,'spe','Spe')}
   </div>
 
+  <div class="ps-section">
+    <div class="ps-label">IVs <span style="font-weight:400;text-transform:none">(vacío = 31)</span></div>
+    <div class="ps-row" style="grid-template-columns:repeat(6,1fr);gap:4px">
+      ${ivInput(i,'hp','HP')}${ivInput(i,'atk','Atk')}${ivInput(i,'def','Def')}
+      ${ivInput(i,'spa','SpA')}${ivInput(i,'spd','SpD')}${ivInput(i,'spe','Spe')}
+    </div>
+  </div>
 
   <div class="ps-section">
     <div class="ps-label">Movimientos</div>
@@ -997,29 +785,29 @@ function debouncedEvRefresh(i){
   clearTimeout(_evRefreshT);
   _evRefreshT=setTimeout(()=>{
     const p=teamDraft.pokemon[i]; if(!p) return;
-    const total=statTotal(p.evs);
-    const over=total>STAT_BUDGET;
+    const total=['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
+    const over=total>508;
     const badge=document.getElementById('evtotal-'+i);
-    if(badge){badge.textContent=total+'/'+STAT_BUDGET;badge.className='ev-total-badge '+(over?'ev-over':'ev-ok');}
+    if(badge){badge.textContent=total+'/508';badge.className='ev-total-badge '+(over?'ev-over':'ev-ok');}
     document.querySelectorAll('.ev-stat-row').forEach(row=>{
       const inp=row.querySelector('.ev-stat-input');
       const bar=row.querySelector('.ev-stat-bar');
       if(!inp||!bar) return;
       const v=parseInt(inp.value)||0;
-      bar.style.width=Math.min(100,Math.round(v/STAT_MAX*100))+'%';
-      bar.classList.toggle('ev-full',v>=STAT_MAX);
+      bar.style.width=Math.min(100,Math.round(v/252*100))+'%';
+      bar.classList.toggle('ev-full',v>=252);
     });
   },80);
 }
 function updateEvBars(i){
   const p = teamDraft.pokemon[i];
   if(!p) return;
-  const total = statTotal(p.evs);
-  const over = total>STAT_BUDGET;
+  const total = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
+  const over = total>508;
   const badge = document.getElementById('evtotal-'+i);
-  if(badge){ badge.textContent=total+'/'+STAT_BUDGET; badge.className='ev-total-badge '+(over?'ev-over':'ev-ok'); }
+  if(badge){ badge.textContent=total+'/508'; badge.className='ev-total-badge '+(over?'ev-over':'ev-ok'); }
   ['hp','atk','def','spa','spd','spe'].forEach(stat=>{
-    const val=p.evs[stat]||0, pct=Math.min(100,Math.round(val/STAT_MAX*100));
+    const val=p.evs[stat]||0, pct=Math.min(100,Math.round(val/252*100));
     const bars=document.querySelectorAll(`.ev-stat-bar`);
     // find by checking parent ev-stat-row label
     const rows=document.querySelectorAll('.ev-stat-row');
@@ -1027,13 +815,12 @@ function updateEvBars(i){
       const inp=row.querySelector('.ev-stat-input');
       if(inp && inp.oninput && inp.oninput.toString().includes("'"+stat+"'")){
         const bar=row.querySelector('.ev-stat-bar');
-        if(bar){ bar.style.width=pct+'%'; bar.classList.toggle('ev-full',val>=STAT_MAX); }
+        if(bar){ bar.style.width=pct+'%'; bar.classList.toggle('ev-full',val>=252); }
       }
     });
   });
 }
 function setMon(i,k,v){
-  if(k==='level') v=BUILDER_LEVEL;
   teamDraft.pokemon[i][k]=v;
   if(k==='name'){
     // si la especie tiene una sola habilidad y aún no se eligió, sugerirla
@@ -1049,24 +836,11 @@ function scheduleMonRefresh(i){
   monRefreshT=setTimeout(()=>{ if(teamTab==='editor'){ const act=document.activeElement; const isMonInput=act&&act.dataset&&act.dataset.ac==='mon'; if(!isMonInput) renderTeamModal(); } },400);
 }
 function setMove(i,m,v){ teamDraft.pokemon[i].moves[m]=v; }
-function setStat(i,grp,k,v){
-  const mon=teamDraft.pokemon[i]; if(!mon) return;
-  if(!mon[grp]) mon[grp]={};
-  const n=parseInt(v,10);
-  if(v===''||isNaN(n)){ delete mon[grp][k]; return; }
-  if(grp==='evs'){
-    const others=STAT_KEYS_BUILD.filter(x=>x!==k).reduce((s,x)=>s+(parseInt(mon.evs[x],10)||0),0);
-    mon.evs[k]=Math.max(0, Math.min(STAT_MAX, STAT_BUDGET-others, n));
-  } else {
-    mon[grp][k]=n;
-  }
-}
-function addMon(){ if(!teamDraft) return; teamDraft.pokemon.push(blankMon()); window._psTab=teamDraft.pokemon.length-1; renderTeamModal(); }
-function rmMon(i){ if(!teamDraft) return; teamDraft.pokemon.splice(i,1); window._psTab=Math.max(0, Math.min(window._psTab||0, teamDraft.pokemon.length-1)); renderTeamModal(); }
+function setStat(i,grp,k,v){ const n=parseInt(v,10); if(v===''||isNaN(n)) delete teamDraft.pokemon[i][grp][k]; else teamDraft.pokemon[i][grp][k]=n; }
+function addMon(){ teamDraft.pokemon.push(blankMon()); renderTeamModal(); }
+function rmMon(i){ teamDraft.pokemon.splice(i,1); renderTeamModal(); }
 
 async function saveTeam(){
-  const saveBtn = event && event.target ? event.target : null;
-  if(saveBtn) saveBtn.disabled=true;
   try{
     if(!teamDraft){ alert('Estado del editor perdido. Cerrá y reabrí el team.'); return; }
     // leer nombre directo del input por si el oninput no se disparó
@@ -1079,7 +853,7 @@ async function saveTeam(){
     const pubBox=$('tPub'); if(pubBox) teamDraft.is_public=pubBox.checked;
     // limpiar moves vacíos y pokémon sin nombre
     const pokemon=(teamDraft.pokemon||[])
-      .map(p=>normalizeMonBuild({...p,moves:(p.moves||[]).filter(Boolean)}))
+      .map(p=>({...p,moves:(p.moves||[]).filter(Boolean)}))
       .filter(p=>(p.name||'').trim());
     const payload={name,pokemon,is_public:teamDraft.is_public,owner:me.id};
     $('tErr').style.color='var(--txt2)'; $('tErr').textContent='Guardando…';
@@ -1087,17 +861,17 @@ async function saveTeam(){
     if(teamDraft.id){ res=await sb.from('teams').update(payload).eq('id',teamDraft.id); }
     else            { res=await sb.from('teams').insert(payload); }
     if(res.error){ console.error('saveTeam error:',res.error); $('tErr').style.color='var(--loss)'; $('tErr').textContent='Error: '+res.error.message; return; }
-    closeModal(); await route();
+    closeModal(); route();
   }catch(e){
     console.error('saveTeam excepción:',e);
     const box=$('tErr'); if(box){ box.style.color='var(--loss)'; box.textContent='Error inesperado: '+e.message; }
     else alert('Error al guardar: '+e.message);
-  } finally { if(saveBtn) saveBtn.disabled=false; }
+  }
 }
 /* ── Parser completo formato Pokémon Showdown ── */
 const STAT_KEYS=['hp','atk','def','spa','spd','spe'];
-function blankMon(){ return {name:'',nickname:'',gender:'',item:'',ability:'',level:BUILDER_LEVEL,shiny:false,
-  teraType:'',nature:'',evs:{},moves:[]}; }
+function blankMon(){ return {name:'',nickname:'',gender:'',item:'',ability:'',level:'',shiny:false,
+  teraType:'',nature:'',evs:{},ivs:{},moves:[]}; }
 function parsePaste(txt){
   const blocks=txt.split(/\n\s*\n/).map(b=>b.replace(/\r/g,'').trim()).filter(Boolean);
   const mons=[];
@@ -1118,16 +892,13 @@ function parsePaste(txt){
       if(line.startsWith('- ')){ p.moves.push(line.slice(2).trim()); return; }
       const [k,...rest]=line.split(':'); const key=k.trim().toLowerCase(); const val=rest.join(':').trim();
       if(key==='ability') p.ability=val;
-      else if(key==='level') p.level=BUILDER_LEVEL;
+      else if(key==='level') p.level=val;
       else if(key==='shiny') p.shiny=/yes/i.test(val);
       else if(key==='tera type') p.teraType=val;
       else if(/nature$/i.test(line)){ p.nature=line.replace(/nature/i,'').trim(); }
       else if(key==='evs') parseStats(val,p.evs);
-      else if(key==='ivs') { /* IVs ocultos/deshabilitados en este builder */ }
+      else if(key==='ivs') parseStats(val,p.ivs);
     });
-    p.level=BUILDER_LEVEL;
-    p.evs=normalizeStatPoints(p.evs);
-    delete p.ivs;
     if(p.name) mons.push(p);
   });
   return mons.slice(0,6);
@@ -1147,11 +918,12 @@ function exportShowdown(mons){
     if(p.item) head+=` @ ${p.item}`;
     const L=[head];
     if(p.ability) L.push(`Ability: ${p.ability}`);
-    L.push(`Level: ${BUILDER_LEVEL}`);
+    if(p.level&&p.level!=='100'&&p.level!=='') L.push(`Level: ${p.level}`);
     if(p.shiny) L.push(`Shiny: Yes`);
     if(p.teraType) L.push(`Tera Type: ${p.teraType}`);
     const ev=fmtStats(p.evs); if(ev) L.push(`EVs: ${ev}`);
     if(p.nature) L.push(`${p.nature} Nature`);
+    const iv=fmtStats(p.ivs,true); if(iv) L.push(`IVs: ${iv}`);
     (p.moves||[]).filter(Boolean).forEach(m=>L.push(`- ${m}`));
     return L.join('\n');
   }).join('\n\n');
@@ -1289,7 +1061,6 @@ async function renderProfile(uid){
   }
 
   sb.auth.onAuthStateChange(async(event)=>{
-    if(isLoggingOut) return;
     if(event==='PASSWORD_RECOVERY'){ recovering=true; route(); return; }
     try{ await loadMe(); route(); }catch(e){ initFallback(e); }
   });
