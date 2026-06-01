@@ -400,6 +400,7 @@ document.addEventListener('focusout',e=>{ if(e.target.dataset && e.target.datase
 
 
 let me = null;        // perfil propio
+let isLoggingOut = false;
 let view = 'home';    // home | teams | matches | search | profile
 let viewedUser = null;
 
@@ -439,16 +440,26 @@ async function doAuth(){
   $('auBtn').disabled=false;
 }
 async function logout(){
-  try { await sb.auth.signOut({scope:'global'}); } catch(e) { console.warn('signOut falló:', e); }
+  isLoggingOut = true;
   me=null; recovering=false; viewedUser=null; view='home';
+  try { closeModal(); } catch(e) {}
   try {
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-') || k.toLowerCase().includes('supabase')) localStorage.removeItem(k); });
     Object.keys(sessionStorage).forEach(k=>{ if(k.startsWith('sb-') || k.toLowerCase().includes('supabase')) sessionStorage.removeItem(k); });
   } catch(e) {}
-  try { closeModal(); } catch(e) {}
-  route();
-  setTimeout(()=>location.reload(), 80);
+  try {
+    $('app').classList.add('hidden');
+    $('authView').classList.remove('hidden');
+    $('topbar').classList.add('hidden');
+  } catch(e) {}
+  Promise.race([
+    sb.auth.signOut({scope:'global'}),
+    new Promise(resolve=>setTimeout(resolve,900))
+  ]).catch(e=>console.warn('signOut falló:', e)).finally(()=>{
+    window.location.replace(window.location.pathname + window.location.search);
+  });
 }
+
 
 /* ---- recuperación de contraseña ---- */
 let recovering = false;
@@ -612,7 +623,7 @@ function openTeam(t){
   // estado de edición en memoria
   window._psTab=0;
   teamDraft={ id:t.id||'', name:t.name||'', is_public:t.is_public!==false,
-              pokemon:JSON.parse(JSON.stringify(t.pokemon||[])) };
+              pokemon:JSON.parse(JSON.stringify(t.pokemon||[])).map(normalizeMonBuild) };
   teamTab='editor';
   if(!teamDraft.pokemon.length) teamTab='import';
   renderTeamModal();
@@ -647,7 +658,7 @@ function importPane(){
 function applyImport(){
   const mons=parsePaste($('tPaste').value);
   if(!mons.length){ $('tErr').textContent='No pude leer ningún Pokémon. Revisá el formato.'; return; }
-  teamDraft.pokemon=mons; teamTab='editor'; renderTeamModal();
+  teamDraft.pokemon=mons.map(normalizeMonBuild); window._psTab=0; teamTab='editor'; renderTeamModal();
 }
 function copyExport(){
   const txt=exportShowdown(teamDraft.pokemon);
@@ -655,7 +666,8 @@ function copyExport(){
 }
 function editorPane(){
   const mons = teamDraft.pokemon;
-  if(!mons.length) return `<div class="muted" style="padding:20px 0">Agregá un Pokémon o usá la pestaña Importar.</div>`;
+  if(!mons.length) return `<div class="muted" style="padding:20px 0">Agregá un Pokémon o usá la pestaña Importar.</div>
+    <button class="btn ghost sm" style="margin-top:8px" onclick="addMon()">＋ Agregar Pokémon</button>`;
   // currentPsTab is a global index
   if(typeof window._psTab==='undefined') window._psTab=0;
   window._psTab = Math.min(window._psTab, mons.length-1);
@@ -698,14 +710,7 @@ function evBar(i, stat, label){
       oninput="setStat(${i},'evs','${stat}',this.value);debouncedEvRefresh(${i})">
   </div>`;
 }
-function ivInput(i, stat, label){
-  const val = teamDraft.pokemon[i].ivs[stat];
-  return `<div style="text-align:center">
-    <div style="font-size:9px;color:var(--txt2);margin-bottom:2px">${label}</div>
-    <input class="ev-stat-input" style="width:100%" type="number" min="0" max="31" placeholder="31" value="${val!=null?val:''}"
-      oninput="setStat(${i},'ivs','${stat}',this.value)">
-  </div>`;
-}
+function ivInput(i, stat, label){ return ''; }
 function monEditor(p, i){
   const evTotal = statTotal(p.evs);
   const evOver = evTotal>STAT_BUDGET;
@@ -785,13 +790,6 @@ function monEditor(p, i){
     ${evBar(i,'spe','Spe')}
   </div>
 
-  <div class="ps-section">
-    <div class="ps-label">IVs <span style="font-weight:400;text-transform:none">(vacío = 31)</span></div>
-    <div class="ps-row" style="grid-template-columns:repeat(6,1fr);gap:4px">
-      ${ivInput(i,'hp','HP')}${ivInput(i,'atk','Atk')}${ivInput(i,'def','Def')}
-      ${ivInput(i,'spa','SpA')}${ivInput(i,'spd','SpD')}${ivInput(i,'spe','Spe')}
-    </div>
-  </div>
 
   <div class="ps-section">
     <div class="ps-label">Movimientos</div>
@@ -873,10 +871,12 @@ function setStat(i,grp,k,v){
     mon[grp][k]=n;
   }
 }
-function addMon(){ teamDraft.pokemon.push(blankMon()); renderTeamModal(); }
-function rmMon(i){ teamDraft.pokemon.splice(i,1); renderTeamModal(); }
+function addMon(){ if(!teamDraft) return; teamDraft.pokemon.push(blankMon()); window._psTab=teamDraft.pokemon.length-1; renderTeamModal(); }
+function rmMon(i){ if(!teamDraft) return; teamDraft.pokemon.splice(i,1); window._psTab=Math.max(0, Math.min(window._psTab||0, teamDraft.pokemon.length-1)); renderTeamModal(); }
 
 async function saveTeam(){
+  const saveBtn = event && event.target ? event.target : null;
+  if(saveBtn) saveBtn.disabled=true;
   try{
     if(!teamDraft){ alert('Estado del editor perdido. Cerrá y reabrí el team.'); return; }
     // leer nombre directo del input por si el oninput no se disparó
@@ -897,12 +897,12 @@ async function saveTeam(){
     if(teamDraft.id){ res=await sb.from('teams').update(payload).eq('id',teamDraft.id); }
     else            { res=await sb.from('teams').insert(payload); }
     if(res.error){ console.error('saveTeam error:',res.error); $('tErr').style.color='var(--loss)'; $('tErr').textContent='Error: '+res.error.message; return; }
-    closeModal(); route();
+    closeModal(); await route();
   }catch(e){
     console.error('saveTeam excepción:',e);
     const box=$('tErr'); if(box){ box.style.color='var(--loss)'; box.textContent='Error inesperado: '+e.message; }
     else alert('Error al guardar: '+e.message);
-  }
+  } finally { if(saveBtn) saveBtn.disabled=false; }
 }
 /* ── Parser completo formato Pokémon Showdown ── */
 const STAT_KEYS=['hp','atk','def','spa','spd','spe'];
@@ -1099,6 +1099,7 @@ async function renderProfile(uid){
   }
 
   sb.auth.onAuthStateChange(async(event)=>{
+    if(isLoggingOut) return;
     if(event==='PASSWORD_RECOVERY'){ recovering=true; route(); return; }
     try{ await loadMe(); route(); }catch(e){ initFallback(e); }
   });
