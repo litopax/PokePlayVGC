@@ -2461,12 +2461,10 @@ function getSpriteUrl(p, forExport = false) {
   const key = p.name.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
   const wd = WIKIDEX_DATA[key];
   const id = p.spriteId || (wd && wd.id) || 0;
-  // Fallback to pokemondb (name-based, no ID needed) when id unknown
+  // Fallback by name (no ID needed) when id unknown — PokeAPI allows CORS
   if (!id) {
-    const dbKey = key.replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-    return p.shiny
-      ? `https://img.pokemondb.net/sprites/home/shiny/${dbKey}.png`
-      : `https://img.pokemondb.net/sprites/home/normal/${dbKey}.png`;
+    if (p.shiny) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/shiny/${key}.png`;
+    return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${key}.png`;
   }
   // Shiny: animated GIF from Showdown
   if (p.shiny) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/shiny/${id}.gif`;
