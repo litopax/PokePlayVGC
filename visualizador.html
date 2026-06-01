@@ -1650,6 +1650,18 @@ const DOT_COLOR = {
 
 const MAX_STAT = { HP:400, Atk:300, Def:300, SpA:300, SpD:300, Spe:300 };
 const STAT_KEYS = ['HP','Atk','Def','SpA','SpD','Spe'];
+const STAT_BUDGET = 66;
+function normalizeDisplayEvs(evs){
+  const raw = {};
+  STAT_KEYS.forEach(k=>{ raw[k]=parseInt(evs?.[k],10)||0; });
+  let total = STAT_KEYS.reduce((s,k)=>s+raw[k],0);
+  if (STAT_KEYS.some(k=>raw[k]>STAT_BUDGET) || total>STAT_BUDGET) {
+    STAT_KEYS.forEach(k=>{ raw[k]=Math.max(0, Math.round(raw[k]/8)); });
+  }
+  const clean = {}; let used = 0;
+  STAT_KEYS.forEach(k=>{ const v=Math.max(0, Math.min(STAT_BUDGET-used, raw[k])); if(v>0) clean[k]=v; used+=v; });
+  return clean;
+}
 
 const NATURE_MOD = {
   Hardy:[0,0,0,0,0],Lonely:[1,-1,0,0,0],Brave:[1,0,0,0,-1],Adamant:[1,0,-1,0,0],Naughty:[1,0,0,-1,0],
@@ -1664,7 +1676,7 @@ const TYPE_ICON_URL = {
   fighting: 'https://images.wikidexcdn.net/mwuploads/wikidex/f/f2/latest/20230128125518/Tipo_lucha_icono_EP.svg',
   flying:   'https://images.wikidexcdn.net/mwuploads/wikidex/6/6b/latest/20230128132815/Tipo_volador_icono_EP.svg',
   poison:   'https://images.wikidexcdn.net/mwuploads/wikidex/f/fa/latest/20230128132735/Tipo_veneno_icono_EP.svg',
-  ground:   'https://play.pokemonshowdown.com/sprites/types/Ground.png',
+  ground:   'data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2064%2064%27%3E%3Crect%20width%3D%2764%27%20height%3D%2764%27%20rx%3D%2714%27%20fill%3D%27%23b88a45%27%2F%3E%3Cpath%20d%3D%27M10%2045h44L42%2018%2032%2034%2024%2022z%27%20fill%3D%27%23f2d08b%27%2F%3E%3Cpath%20d%3D%27M10%2045h44v7H10z%27%20fill%3D%27%238a5b2b%27%2F%3E%3C%2Fsvg%3E',
   rock:     'https://images.wikidexcdn.net/mwuploads/wikidex/1/14/latest/20230128125805/Tipo_roca_icono_EP.svg',
   bug:      'https://images.wikidexcdn.net/mwuploads/wikidex/1/1a/latest/20230128124809/Tipo_bicho_icono_EP.svg',
   ghost:    'https://images.wikidexcdn.net/mwuploads/wikidex/3/3d/latest/20230128125103/Tipo_fantasma_icono_EP.svg',
@@ -2258,6 +2270,12 @@ async function parseShowdown(text) {
       }
     }
 
+    const evObj = {};
+    evs.forEach(([s,v])=>{ evObj[s]=parseInt(v,10)||0; });
+    const evClean = normalizeDisplayEvs(evObj);
+    evs.length = 0;
+    STAT_KEYS.forEach(k=>{ if(evClean[k]) evs.push([k, String(evClean[k])]); });
+
     // Nature
     const natureLine = lines.find(l => /nature$/i.test(l));
     const nature = natureLine ? natureLine.replace(/\s*nature$/i, '').trim() : '';
@@ -2431,12 +2449,12 @@ function calcStats(base, evs, nature) {
     const lv = 50;
     let val;
     if (k === 'HP') {
-      val = Math.floor(((2*b + iv + Math.floor(ev/4)) * lv / 100) + lv + 10);
+      val = Math.floor(((2*b + iv) * lv / 100) + lv + 10) + ev;
     } else {
-      const base_val = Math.floor(((2*b + iv + Math.floor(ev/4)) * lv / 100) + 5);
+      const base_val = Math.floor(((2*b + iv) * lv / 100) + 5);
       const mod = modMap[k] || 0;
       const mult = mod === 1 ? 1.1 : mod === -1 ? 0.9 : 1.0;
-      val = Math.floor(base_val * mult);
+      val = Math.floor(base_val * mult) + ev;
     }
     return { key: k, val, mod: modMap[k] || 0 };
   });
@@ -2485,7 +2503,7 @@ function buildStatsBack(p) {
     const ev = evMap[s.key] || 0;
     // EV bar: % of track = ev / 66 * 100 (max meaningful single stat in VGC is 252 EVs = 63 points)
     // We use raw EV points as displayed (e.g. 32), max reference = 66
-    const evPct = Math.min(100, Math.round(ev / 66 * 100));
+    const evPct = Math.min(100, Math.round(ev / STAT_BUDGET * 100));
     const natClass = s.mod === 1 ? ' nat-up' : s.mod === -1 ? ' nat-down' : '';
 
     const evBadge = ev > 0
@@ -2570,7 +2588,7 @@ function buildCard(p, slot) {
 
   const statRows = stats.map(s => {
     const pct = Math.min(100, Math.round(s.val / MAX_STAT[s.key] * 100));
-    const evPct = Math.min(100, Math.round((evMap[s.key]||0) / 66 * 100));
+    const evPct = Math.min(100, Math.round((evMap[s.key]||0) / STAT_BUDGET * 100));
     const nc = s.mod===1?' nat-up':s.mod===-1?' nat-down':'';
     return `<div class="stat-row">
       <div class="stat-lbl${nc}">${statLabel(s.key)}</div>
@@ -3511,7 +3529,7 @@ function buildCleanCard(p) {
 
   const statRows = stats.map(s => {
     const pct   = Math.min(100, Math.round(s.val / MAX_STAT[s.key] * 100));
-    const evPct = Math.min(100, Math.round((evMap[s.key]||0) / 66 * 100));
+    const evPct = Math.min(100, Math.round((evMap[s.key]||0) / STAT_BUDGET * 100));
     const nc    = s.mod===1?' nat-up':s.mod===-1?' nat-down':'';
     return `<div class="stat-row">
       <div class="stat-lbl${nc}">${statLabel(s.key)}</div>
