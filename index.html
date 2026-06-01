@@ -503,7 +503,7 @@ function teamCard(t,own){
   teamCache[t.id]=t; // para visualizar/editar sin re-fetch
   return `<div class="teamcard">
     <div class="teamhead"><div><div class="bebas" style="font-size:20px">${esc(t.name)}</div>
-      <span class="tag">${t.is_public?'Público':'Privado'}</span></div>
+      <div class="row" style="gap:4px"><span class="tag">${t.is_public?'Público':'Privado'}</span><span class="tag" style="color:var(--holo2)">${t.format==='singles'?'Singles':'Doubles'}</span></div>
       <div class="row" style="gap:6px">
         <button class="btn ghost sm" onclick="visualizeTeam('${t.id}')">👁 Visualización</button>
         ${own?`<button class="btn ghost sm" onclick="editTeamById('${t.id}')">Editar</button>
@@ -526,7 +526,7 @@ function visualizeTeam(id){
 function openTeam(t){
   t=t||{name:'',pokemon:[],is_public:true};
   // estado de edición en memoria
-  teamDraft={ id:t.id||'', name:t.name||'', is_public:t.is_public!==false,
+  teamDraft={ id:t.id||'', name:t.name||'', is_public:t.is_public!==false, format:t.format||'doubles',
               pokemon:JSON.parse(JSON.stringify(t.pokemon||[])) };
   teamTab='editor';
   if(!teamDraft.pokemon.length) teamTab='import';
@@ -540,6 +540,13 @@ function renderTeamModal(){
   const t=teamDraft;
   modal(`<div class="section-title bebas" style="font-size:22px">${t.id?'Editar team':'Nuevo team'}</div>
     <label>Nombre del team</label><input id="tName" class="field" value="${esc(t.name)}" placeholder="TR Mega Venusaur" oninput="teamDraft.name=this.value">
+    <div class="row" style="gap:8px;margin:10px 0">
+      <label style="margin:0;font-size:12px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;align-self:center">Formato</label>
+      <select class="field" style="width:auto;min-width:130px" onchange="teamDraft.format=this.value">
+        <option value="singles" ${t.format==='singles'?'selected':''}>Singles</option>
+        <option value="doubles" ${t.format!=='singles'?'selected':''}>Doubles</option>
+      </select>
+    </div>
     <div class="tabs" style="margin:16px 0">
       <button class="${teamTab==='editor'?'active':''}" onclick="teamTab='editor';renderTeamModal()">Editor visual (${t.pokemon.length})</button>
       <button class="${teamTab==='import'?'active':''}" onclick="teamTab='import';renderTeamModal()">Importar / Exportar</button>
@@ -651,7 +658,7 @@ async function saveTeam(){
     const pokemon=(teamDraft.pokemon||[])
       .map(p=>({...p,moves:(p.moves||[]).filter(Boolean)}))
       .filter(p=>(p.name||'').trim());
-    const payload={name,pokemon,is_public:teamDraft.is_public,owner:me.id};
+    const payload={name,pokemon,is_public:teamDraft.is_public,format:teamDraft.format||'doubles',owner:me.id};
     $('tErr').style.color='var(--txt2)'; $('tErr').textContent='Guardando…';
     let res;
     if(teamDraft.id){ res=await sb.from('teams').update(payload).eq('id',teamDraft.id); }
@@ -666,7 +673,7 @@ async function saveTeam(){
 }
 /* ── Parser completo formato Pokémon Showdown ── */
 const STAT_KEYS=['hp','atk','def','spa','spd','spe'];
-function blankMon(){ return {name:'',nickname:'',gender:'',item:'',ability:'',level:'',shiny:false,
+function blankMon(){ return {name:'',nickname:'',gender:'',item:'',ability:'',level:'50',shiny:false,
   teraType:'',nature:'',evs:{},ivs:{},moves:[]}; }
 function parsePaste(txt){
   const blocks=txt.split(/\n\s*\n/).map(b=>b.replace(/\r/g,'').trim()).filter(Boolean);
@@ -714,7 +721,7 @@ function exportShowdown(mons){
     if(p.item) head+=` @ ${p.item}`;
     const L=[head];
     if(p.ability) L.push(`Ability: ${p.ability}`);
-    if(p.level&&p.level!=='100'&&p.level!=='') L.push(`Level: ${p.level}`);
+    if(p.level&&p.level!=='') L.push(`Level: ${p.level}`);
     if(p.shiny) L.push(`Shiny: Yes`);
     if(p.teraType) L.push(`Tera Type: ${p.teraType}`);
     const ev=fmtStats(p.evs); if(ev) L.push(`EVs: ${ev}`);
