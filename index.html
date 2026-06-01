@@ -93,6 +93,15 @@ textarea.field{resize:vertical;min-height:80px;font-family:monospace;font-size:1
 .mon-name{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mon-item{font-size:10px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .team-actions{display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
+.add-team-card{cursor:pointer;border:2px dashed rgba(255,255,255,0.15);background:transparent;
+  min-height:180px;transition:border-color 0.2s,background 0.2s}
+.add-team-card:hover{border-color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.03)}
+.add-team-inner{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;min-height:180px;gap:10px;color:rgba(255,255,255,0.3);transition:color 0.2s}
+.add-team-card:hover .add-team-inner{color:rgba(255,255,255,0.6)}
+.add-team-icon{width:48px;height:48px;border-radius:12px;border:2px solid currentColor;
+  display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:300;line-height:1}
+.add-team-label{font-size:13px;font-weight:500;letter-spacing:0.03em}
 
 .list-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;
   background:var(--panel);border:1px solid var(--line);border-radius:10px}
@@ -518,10 +527,15 @@ async function renderHome(){
       ${matchupCard('Mejores matchups',s.best,'win')}
       ${matchupCard('Peores matchups',s.worst,'loss')}
     </div>
-    <div class="section-title bebas" style="margin-top:26px"><span>Tus teams (${teams?.length||0})</span>
-      <button class="btn sm" onclick="go('teams')">Gestionar</button></div>
+    <div class="section-title bebas" style="margin-top:26px"><span>Tus teams (${teams?.length||0})</span></div>
     <div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">
-      ${(teams||[]).slice(0,4).map(teamCard).join('')||'<div class="empty">Todavía no cargaste teams.</div>'}
+      ${(teams||[]).map(t=>teamCard(t,true)).join('')}
+      <div class="teamcard add-team-card" onclick="openTeam()" title="Agregar equipo">
+        <div class="add-team-inner">
+          <div class="add-team-icon">+</div>
+          <div class="add-team-label">Agregar equipo</div>
+        </div>
+      </div>
     </div>`;
 }
 const statCard=(k,v,l,cls)=>`<div class="stat ${cls}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
