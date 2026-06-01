@@ -159,11 +159,11 @@ textarea.field{resize:vertical;min-height:80px;font-family:monospace;font-size:1
     </div>
     <div style="margin-bottom:14px">
       <label>Email</label>
-      <input id="auEmail" class="field" type="email" placeholder="tu@email.com" autocomplete="email">
+      <input id="auEmail" class="field" type="email" placeholder="tu@email.com" autocomplete="email" onkeydown="if(event.key==='Enter')doAuth()">
     </div>
     <div style="margin-bottom:6px">
       <label>Contraseña</label>
-      <input id="auPass" class="field" type="password" placeholder="••••••••" autocomplete="current-password">
+      <input id="auPass" class="field" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuth()">
     </div>
     <div class="err" id="auErr"></div>
     <button class="btn" style="width:100%;margin-top:8px" id="auBtn" onclick="doAuth()">Entrar</button>
@@ -364,7 +364,7 @@ async function doAuth(){
   }catch(e){ $('auErr').style.color='var(--loss)'; $('auErr').textContent=e.message; }
   $('auBtn').disabled=false;
 }
-async function logout(){ await sb.auth.signOut(); me=null; recovering=false; route(); }
+async function logout(){ await sb.auth.signOut(); localStorage.clear(); me=null; recovering=false; route(); }
 
 /* ---- recuperación de contraseña ---- */
 let recovering = false;
@@ -445,7 +445,7 @@ function renderNav(){
   if(!me){ n.innerHTML=''; return; }
   const items=[['home','Inicio'],['teams','Mis teams'],['matches','Partidas'],['search','Buscar'],['profile','Mi perfil']];
   n.innerHTML=items.map(([k,l])=>`<button class="${view===k?'active':''}" onclick="go('${k}')">${l}</button>`).join('')
-    +`<button class="btn ghost sm" onclick="logout()">Salir</button>`;
+    +`<button class="btn ghost sm" onclick="logout()">Cerrar sesión</button>`;
 }
 
 /* ---------- HOME (dashboard propio) ---------- */
