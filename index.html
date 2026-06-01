@@ -109,7 +109,47 @@ textarea.field{resize:vertical;min-height:80px;font-family:monospace;font-size:1
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:100;
   display:flex;align-items:center;justify-content:center;padding:18px}
 .modal{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:24px;
-  width:100%;max-width:560px;max-height:88vh;overflow:auto}
+  width:100%;max-width:800px;max-height:92vh;overflow:auto}
+
+/* ── Editor estilo Showdown ── */
+.ps-editor{display:flex;gap:0;min-height:420px;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:10px}
+.ps-sidebar{width:120px;flex-shrink:0;background:var(--panel2);border-right:1px solid var(--line);display:flex;flex-direction:column}
+.ps-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;cursor:pointer;border-bottom:1px solid var(--line);position:relative;transition:background .15s}
+.ps-tab:hover{background:rgba(255,255,255,.05)}
+.ps-tab.ps-active{background:var(--panel)}
+.ps-tab.ps-active::after{content:'';position:absolute;right:-1px;top:0;bottom:0;width:2px;background:var(--holo1)}
+.ps-tab-sprite{width:50px;height:50px;image-rendering:pixelated}
+.ps-tab-name{font-size:10px;color:var(--txt2);text-align:center;width:108px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
+.ps-tab.ps-empty .ps-tab-name{color:var(--line)}
+.ps-tab-add{padding:10px 0;text-align:center;font-size:22px;cursor:pointer;color:var(--txt2)}
+.ps-tab-add:hover{color:var(--txt);background:rgba(255,255,255,.05)}
+.ps-main{flex:1;overflow:auto;padding:14px 16px}
+.ps-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.ps-sprite-big{width:80px;height:80px;image-rendering:pixelated;flex-shrink:0}
+.ps-mon-inputs{flex:1;display:flex;flex-direction:column;gap:6px}
+.ps-row{display:grid;gap:6px}
+.ps-row-2{grid-template-columns:1fr 1fr}
+.ps-row-3{grid-template-columns:1fr 1fr 1fr}
+.ps-section{margin-bottom:10px}
+.ps-label{font-size:10px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.ps-moves{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.ps-field{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--txt);padding:7px 9px;width:100%;font-size:12px;font-family:inherit}
+.ps-field:focus{outline:none;border-color:var(--holo1)}
+select.ps-field{cursor:pointer}
+.ev-stat-row{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.ev-stat-label{font-size:10px;color:var(--txt2);width:26px;text-align:right;flex-shrink:0}
+.ev-stat-bar-wrap{flex:1;height:5px;background:var(--bg);border-radius:3px;overflow:hidden}
+.ev-stat-bar{height:100%;border-radius:3px;background:var(--holo2);transition:width .15s}
+.ev-stat-bar.ev-full{background:var(--accent)}
+.ev-stat-input{width:42px;flex-shrink:0;background:var(--panel2);border:1px solid var(--line);border-radius:6px;color:var(--txt);padding:3px 4px;font-size:11px;text-align:center;font-family:inherit}
+.ev-stat-input:focus{outline:none;border-color:var(--holo1)}
+.ev-total-badge{font-size:10px;font-weight:700;flex-shrink:0;min-width:34px;text-align:right}
+.ps-type-badge{display:inline-block;font-size:9px;padding:1px 7px;border-radius:5px;color:#fff;text-transform:uppercase;letter-spacing:.3px}
+.ps-shiny-row{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--txt2)}
+.ps-del-btn{background:rgba(255,84,112,.15);border:1px solid rgba(255,84,112,.3);color:var(--loss);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;flex-shrink:0}
+.ps-del-btn:hover{background:rgba(255,84,112,.3)}
+.ev-over{color:var(--loss)!important}
+.ev-ok{color:var(--win)!important}
 .matchup{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;padding:7px 0;border-bottom:1px solid var(--line)}
 .matchup:last-child{border:none}
 
@@ -503,7 +543,7 @@ function teamCard(t,own){
   teamCache[t.id]=t; // para visualizar/editar sin re-fetch
   return `<div class="teamcard">
     <div class="teamhead"><div><div class="bebas" style="font-size:20px">${esc(t.name)}</div>
-      <div class="row" style="gap:4px"><span class="tag">${t.is_public?'Público':'Privado'}</span><span class="tag" style="color:var(--holo2)">${t.format==='singles'?'Singles':'Doubles'}</span></div>
+      <span class="tag">${t.is_public?'Público':'Privado'}</span></div>
       <div class="row" style="gap:6px">
         <button class="btn ghost sm" onclick="visualizeTeam('${t.id}')">👁 Visualización</button>
         ${own?`<button class="btn ghost sm" onclick="editTeamById('${t.id}')">Editar</button>
@@ -526,7 +566,8 @@ function visualizeTeam(id){
 function openTeam(t){
   t=t||{name:'',pokemon:[],is_public:true};
   // estado de edición en memoria
-  teamDraft={ id:t.id||'', name:t.name||'', is_public:t.is_public!==false, format:t.format||'doubles',
+  window._psTab=0;
+  teamDraft={ id:t.id||'', name:t.name||'', is_public:t.is_public!==false,
               pokemon:JSON.parse(JSON.stringify(t.pokemon||[])) };
   teamTab='editor';
   if(!teamDraft.pokemon.length) teamTab='import';
@@ -540,13 +581,6 @@ function renderTeamModal(){
   const t=teamDraft;
   modal(`<div class="section-title bebas" style="font-size:22px">${t.id?'Editar team':'Nuevo team'}</div>
     <label>Nombre del team</label><input id="tName" class="field" value="${esc(t.name)}" placeholder="TR Mega Venusaur" oninput="teamDraft.name=this.value">
-    <div class="row" style="gap:8px;margin:10px 0">
-      <label style="margin:0;font-size:12px;color:var(--txt2);text-transform:uppercase;letter-spacing:.5px;align-self:center">Formato</label>
-      <select class="field" style="width:auto;min-width:130px" onchange="teamDraft.format=this.value">
-        <option value="singles" ${t.format==='singles'?'selected':''}>Singles</option>
-        <option value="doubles" ${t.format!=='singles'?'selected':''}>Doubles</option>
-      </select>
-    </div>
     <div class="tabs" style="margin:16px 0">
       <button class="${teamTab==='editor'?'active':''}" onclick="teamTab='editor';renderTeamModal()">Editor visual (${t.pokemon.length})</button>
       <button class="${teamTab==='import'?'active':''}" onclick="teamTab='import';renderTeamModal()">Importar / Exportar</button>
@@ -576,52 +610,196 @@ function copyExport(){
   navigator.clipboard?.writeText(txt).then(()=>{ $('tErr').style.color='var(--win)'; $('tErr').textContent='Copiado al portapapeles.'; });
 }
 function editorPane(){
-  const mons=teamDraft.pokemon;
-  return `<div class="grid" style="gap:10px">
-    ${mons.map((p,i)=>monEditor(p,i)).join('')}
-    ${mons.length<6?`<button class="btn ghost sm" onclick="addMon()" style="align-self:flex-start">+ Agregar Pokémon</button>`:''}
-    ${!mons.length?'<div class="muted">Agregá un Pokémon o usá la pestaña Importar.</div>':''}
+  const mons = teamDraft.pokemon;
+  if(!mons.length) return `<div class="muted" style="padding:20px 0">Agregá un Pokémon o usá la pestaña Importar.</div>`;
+  // currentPsTab is a global index
+  if(typeof window._psTab==='undefined') window._psTab=0;
+  window._psTab = Math.min(window._psTab, mons.length-1);
+  const tabs = mons.map((p,i)=>{
+    const empty = !p.name;
+    return `<div class="ps-tab${i===window._psTab?' ps-active':''}${empty?' ps-empty':''}" onclick="window._psTab=${i};renderTeamModal()">
+      <img class="ps-tab-sprite" src="${SPRITE(p.name||'Pokeball',p.shiny)}" onerror="this.src='https://img.pokemondb.net/sprites/sword-shield/icon/missingno.jpg'">
+      <div class="ps-tab-name">${esc(p.name)||'—'}</div>
+    </div>`;
+  }).join('');
+  const addBtn = mons.length<6
+    ? `<div class="ps-tab-add" onclick="addMon()" title="Agregar Pokémon">＋</div>`
+    : '';
+  return `<div class="ps-editor">
+    <div class="ps-sidebar">${tabs}${addBtn}</div>
+    <div class="ps-main">${monEditor(mons[window._psTab], window._psTab)}</div>
   </div>`;
 }
-function monInfoLine(name){
+function monInfoBadges(name){
   const sd=speciesData(name);
   if(!sd) return '';
-  const types=(sd.t||[]).map(t=>`<span class="ac-type" style="background:${TYPECOLOR[t]||'#888'}">${t}</span>`).join(' ');
+  const types=(sd.t||[]).map(t=>`<span class="ps-type-badge" style="background:${TYPECOLOR[t]||'#888'}">${t}</span>`).join('');
   const b=sd.b||{};
   const bst=['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(b[k]||0),0);
-  const stats=`<span class="muted" style="font-size:10px">HP ${b.hp} · Atk ${b.atk} · Def ${b.def} · SpA ${b.spa} · SpD ${b.spd} · Spe ${b.spe} · <b style="color:var(--accent)">BST ${bst}</b></span>`;
-  return `<div class="row" style="gap:8px;margin:-4px 0 10px;align-items:center;flex-wrap:wrap">${types} ${stats}</div>`;
+  return `<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:4px">
+    ${types}
+    <span style="font-size:10px;color:var(--txt2)">BST <b style="color:var(--accent)">${bst}</b></span>
+  </div>`;
 }
-function monEditor(p,i){
-  const st=k=>`<input class="field" style="padding:6px 8px;font-size:12px;text-align:center" placeholder="-" value="${p.evs[k]??''}" oninput="setStat(${i},'evs','${k}',this.value)">`;
-  const iv=k=>`<input class="field" style="padding:6px 8px;font-size:12px;text-align:center" placeholder="31" value="${p.ivs[k]??''}" oninput="setStat(${i},'ivs','${k}',this.value)">`;
-  return `<div class="teamcard" style="padding:14px">
-    <div class="row" style="justify-content:space-between;margin-bottom:10px">
-      <div class="row" style="gap:8px;flex:1"><img src="${SPRITE(p.name,p.shiny)}" onerror="this.style.visibility='hidden'" style="width:40px;height:40px;image-rendering:pixelated">
-        <div class="ac-wrap" style="flex:1"><input class="field" style="font-weight:600" data-ac="mon" autocomplete="off" placeholder="Pokémon (ej: Incineroar)" value="${esc(p.name)}" oninput="setMon(${i},'name',this.value)"></div></div>
-      <button class="btn red sm" onclick="rmMon(${i})" style="margin-left:8px">✕</button></div>
-    ${monInfoLine(p.name)}
-    <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-      <div><label>Mote</label><input class="field" value="${esc(p.nickname)}" oninput="setMon(${i},'nickname',this.value)"></div>
-      <div><label>Objeto</label><div class="ac-wrap"><input class="field" data-ac="item" autocomplete="off" value="${esc(p.item)}" oninput="setMon(${i},'item',this.value)"></div></div>
-      <div><label>Habilidad</label><div class="ac-wrap"><input class="field" data-ac="ability" data-mon="${i}" autocomplete="off" value="${esc(p.ability)}" oninput="setMon(${i},'ability',this.value)"></div></div>
-      <div><label>Naturaleza</label><select class="field" onchange="setMon(${i},'nature',this.value)">${NATURES.map(n=>`<option ${n===p.nature?'selected':''}>${n}</option>`).join('')}</select></div>
-      <div><label>Tera Type</label><select class="field" onchange="setMon(${i},'teraType',this.value)">${TERA.map(n=>`<option ${n===p.teraType?'selected':''}>${n}</option>`).join('')}</select></div>
-      <div><label>Nivel</label><input class="field" placeholder="50" value="${esc(p.level)}" oninput="setMon(${i},'level',this.value)"></div>
-      <div><label>Género</label><select class="field" onchange="setMon(${i},'gender',this.value)"><option value="" ${!p.gender?'selected':''}>—</option><option ${p.gender==='M'?'selected':''}>M</option><option ${p.gender==='F'?'selected':''}>F</option></select></div>
-      <div style="display:flex;align-items:flex-end"><label style="margin:0"><input type="checkbox" ${p.shiny?'checked':''} onchange="setMon(${i},'shiny',this.checked)"> Shiny ✨</label></div>
+function evBar(i, stat, label){
+  const val = teamDraft.pokemon[i].evs[stat]||0;
+  const total = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(teamDraft.pokemon[i].evs[k]||0),0);
+  const over = total>508;
+  const pct = Math.min(100, Math.round(val/252*100));
+  const full = val>=252;
+  return `<div class="ev-stat-row">
+    <span class="ev-stat-label">${label}</span>
+    <div class="ev-stat-bar-wrap"><div class="ev-stat-bar${full?' ev-full':''}" style="width:${pct}%"></div></div>
+    <input class="ev-stat-input" type="number" min="0" max="252" placeholder="0" value="${val||''}"
+      oninput="setStat(${i},'evs','${stat}',this.value);debouncedEvRefresh(${i})">
+  </div>`;
+}
+function ivInput(i, stat, label){
+  const val = teamDraft.pokemon[i].ivs[stat];
+  return `<div style="text-align:center">
+    <div style="font-size:9px;color:var(--txt2);margin-bottom:2px">${label}</div>
+    <input class="ev-stat-input" style="width:100%" type="number" min="0" max="31" placeholder="31" value="${val!=null?val:''}"
+      oninput="setStat(${i},'ivs','${stat}',this.value)">
+  </div>`;
+}
+function monEditor(p, i){
+  const evTotal = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
+  const evOver = evTotal>508;
+  return `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <span style="font-size:11px;color:var(--txt2)">Pokémon ${i+1} de ${teamDraft.pokemon.length}</span>
+    <button class="ps-del-btn" onclick="rmMon(${i})">✕ Quitar</button>
+  </div>
+
+  <div class="ps-header">
+    <img class="ps-sprite-big" src="${SPRITE(p.name,p.shiny)}" onerror="this.style.opacity='.3'">
+    <div class="ps-mon-inputs">
+      <div class="ac-wrap"><input class="ps-field" style="font-size:14px;font-weight:700"
+        data-ac="mon" autocomplete="off" placeholder="Nombre del Pokémon…"
+        value="${esc(p.name)}" oninput="setMon(${i},'name',this.value)"></div>
+      ${monInfoBadges(p.name)}
+      <div class="ps-shiny-row">
+        <label><input type="checkbox" ${p.shiny?'checked':''} onchange="setMon(${i},'shiny',this.checked)"> ✨ Shiny</label>
+        <label style="margin-left:10px">
+          Género:
+          <select class="ps-field" style="width:auto;padding:3px 6px;display:inline-block" onchange="setMon(${i},'gender',this.value)">
+            <option value="" ${!p.gender?'selected':''}>—</option>
+            <option ${p.gender==='M'?'selected':''}>M</option>
+            <option ${p.gender==='F'?'selected':''}>F</option>
+          </select>
+        </label>
+      </div>
     </div>
-    <label>EVs</label><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:6px">
-      <div style="text-align:center;font-size:9px;color:var(--txt2)">HP${st('hp')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Atk${st('atk')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Def${st('def')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">SpA${st('spa')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">SpD${st('spd')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Spe${st('spe')}</div>
+  </div>
+
+  <div class="ps-row ps-row-2" style="margin-bottom:10px">
+    <div>
+      <div class="ps-label">Objeto</div>
+      <div class="ac-wrap"><input class="ps-field" data-ac="item" autocomplete="off"
+        placeholder="Objeto…" value="${esc(p.item)}" oninput="setMon(${i},'item',this.value)"></div>
     </div>
-    <label>IVs <span style="text-transform:none">(vacío = 31)</span></label><div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:8px">
-      <div style="text-align:center;font-size:9px;color:var(--txt2)">HP${iv('hp')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Atk${iv('atk')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Def${iv('def')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">SpA${iv('spa')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">SpD${iv('spd')}</div><div style="text-align:center;font-size:9px;color:var(--txt2)">Spe${iv('spe')}</div>
+    <div>
+      <div class="ps-label">Habilidad</div>
+      <div class="ac-wrap"><input class="ps-field" data-ac="ability" data-mon="${i}" autocomplete="off"
+        placeholder="Habilidad…" value="${esc(p.ability)}" oninput="setMon(${i},'ability',this.value)"></div>
     </div>
-    <label>Movimientos</label>
-    <div class="grid" style="grid-template-columns:1fr 1fr;gap:6px">
-      ${[0,1,2,3].map(m=>`<div class="ac-wrap"><input class="field" style="font-size:12px" data-ac="move" data-mon="${i}" autocomplete="off" placeholder="Movimiento ${m+1}" value="${esc(p.moves[m]||'')}" oninput="setMove(${i},${m},this.value)"></div>`).join('')}
+  </div>
+
+  <div class="ps-row ps-row-3" style="margin-bottom:10px">
+    <div>
+      <div class="ps-label">Naturaleza</div>
+      <select class="ps-field" onchange="setMon(${i},'nature',this.value)">
+        ${NATURES.map(n=>`<option ${n===p.nature?'selected':''}>${n}</option>`).join('')}
+      </select>
+    </div>
+    <div>
+      <div class="ps-label">Tera Type</div>
+      <select class="ps-field" onchange="setMon(${i},'teraType',this.value)">
+        ${TERA.map(n=>`<option ${n===p.teraType?'selected':''}>${n}</option>`).join('')}
+      </select>
+    </div>
+    <div>
+      <div class="ps-label">Mote / Nivel</div>
+      <div style="display:flex;gap:4px">
+        <input class="ps-field" placeholder="Mote" value="${esc(p.nickname)}"
+          oninput="setMon(${i},'nickname',this.value)" style="flex:1">
+        <input class="ps-field" placeholder="50" value="${esc(p.level)}"
+          oninput="setMon(${i},'level',this.value)" style="width:46px">
+      </div>
+    </div>
+  </div>
+
+  <div class="ps-section">
+    <div class="ps-label">
+      <span>EVs</span>
+      <span id="evtotal-${i}" class="ev-total-badge${evOver?' ev-over':' ev-ok'}">${evTotal}/508</span>
+    </div>
+    ${evBar(i,'hp','HP')}
+    ${evBar(i,'atk','Atk')}
+    ${evBar(i,'def','Def')}
+    ${evBar(i,'spa','SpA')}
+    ${evBar(i,'spd','SpD')}
+    ${evBar(i,'spe','Spe')}
+  </div>
+
+  <div class="ps-section">
+    <div class="ps-label">IVs <span style="font-weight:400;text-transform:none">(vacío = 31)</span></div>
+    <div class="ps-row" style="grid-template-columns:repeat(6,1fr);gap:4px">
+      ${ivInput(i,'hp','HP')}${ivInput(i,'atk','Atk')}${ivInput(i,'def','Def')}
+      ${ivInput(i,'spa','SpA')}${ivInput(i,'spd','SpD')}${ivInput(i,'spe','Spe')}
+    </div>
+  </div>
+
+  <div class="ps-section">
+    <div class="ps-label">Movimientos</div>
+    <div class="ps-moves">
+      ${[0,1,2,3].map(m=>`<div class="ac-wrap">
+        <input class="ps-field" data-ac="move" data-mon="${i}" autocomplete="off"
+          placeholder="Movimiento ${m+1}" value="${esc(p.moves[m]||'')}"
+          oninput="setMove(${i},${m},this.value)">
+      </div>`).join('')}
     </div>
   </div>`;
+}
+let _evRefreshT=null;
+function debouncedEvRefresh(i){
+  clearTimeout(_evRefreshT);
+  _evRefreshT=setTimeout(()=>{
+    const p=teamDraft.pokemon[i]; if(!p) return;
+    const total=['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
+    const over=total>508;
+    const badge=document.getElementById('evtotal-'+i);
+    if(badge){badge.textContent=total+'/508';badge.className='ev-total-badge '+(over?'ev-over':'ev-ok');}
+    document.querySelectorAll('.ev-stat-row').forEach(row=>{
+      const inp=row.querySelector('.ev-stat-input');
+      const bar=row.querySelector('.ev-stat-bar');
+      if(!inp||!bar) return;
+      const v=parseInt(inp.value)||0;
+      bar.style.width=Math.min(100,Math.round(v/252*100))+'%';
+      bar.classList.toggle('ev-full',v>=252);
+    });
+  },80);
+}
+function updateEvBars(i){
+  const p = teamDraft.pokemon[i];
+  if(!p) return;
+  const total = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
+  const over = total>508;
+  const badge = document.getElementById('evtotal-'+i);
+  if(badge){ badge.textContent=total+'/508'; badge.className='ev-total-badge '+(over?'ev-over':'ev-ok'); }
+  ['hp','atk','def','spa','spd','spe'].forEach(stat=>{
+    const val=p.evs[stat]||0, pct=Math.min(100,Math.round(val/252*100));
+    const bars=document.querySelectorAll(`.ev-stat-bar`);
+    // find by checking parent ev-stat-row label
+    const rows=document.querySelectorAll('.ev-stat-row');
+    rows.forEach(row=>{
+      const inp=row.querySelector('.ev-stat-input');
+      if(inp && inp.oninput && inp.oninput.toString().includes("'"+stat+"'")){
+        const bar=row.querySelector('.ev-stat-bar');
+        if(bar){ bar.style.width=pct+'%'; bar.classList.toggle('ev-full',val>=252); }
+      }
+    });
+  });
 }
 function setMon(i,k,v){
   teamDraft.pokemon[i][k]=v;
@@ -658,7 +836,7 @@ async function saveTeam(){
     const pokemon=(teamDraft.pokemon||[])
       .map(p=>({...p,moves:(p.moves||[]).filter(Boolean)}))
       .filter(p=>(p.name||'').trim());
-    const payload={name,pokemon,is_public:teamDraft.is_public,format:teamDraft.format||'doubles',owner:me.id};
+    const payload={name,pokemon,is_public:teamDraft.is_public,owner:me.id};
     $('tErr').style.color='var(--txt2)'; $('tErr').textContent='Guardando…';
     let res;
     if(teamDraft.id){ res=await sb.from('teams').update(payload).eq('id',teamDraft.id); }
@@ -673,7 +851,7 @@ async function saveTeam(){
 }
 /* ── Parser completo formato Pokémon Showdown ── */
 const STAT_KEYS=['hp','atk','def','spa','spd','spe'];
-function blankMon(){ return {name:'',nickname:'',gender:'',item:'',ability:'',level:'50',shiny:false,
+function blankMon(){ return {name:'',nickname:'',gender:'',item:'',ability:'',level:'',shiny:false,
   teraType:'',nature:'',evs:{},ivs:{},moves:[]}; }
 function parsePaste(txt){
   const blocks=txt.split(/\n\s*\n/).map(b=>b.replace(/\r/g,'').trim()).filter(Boolean);
@@ -721,7 +899,7 @@ function exportShowdown(mons){
     if(p.item) head+=` @ ${p.item}`;
     const L=[head];
     if(p.ability) L.push(`Ability: ${p.ability}`);
-    if(p.level&&p.level!=='') L.push(`Level: ${p.level}`);
+    if(p.level&&p.level!=='100'&&p.level!=='') L.push(`Level: ${p.level}`);
     if(p.shiny) L.push(`Shiny: Yes`);
     if(p.teraType) L.push(`Tera Type: ${p.teraType}`);
     const ev=fmtStats(p.evs); if(ev) L.push(`EVs: ${ev}`);
