@@ -603,7 +603,6 @@ function openTeam(t){
   teamDraft={ id:t.id||'', name:t.name||'', is_public:t.is_public!==false,
               pokemon:JSON.parse(JSON.stringify(t.pokemon||[])) };
   teamTab='editor';
-  if(!teamDraft.pokemon.length) teamTab='import';
   renderTeamModal();
 }
 let teamDraft=null, teamTab='editor';
@@ -644,7 +643,18 @@ function copyExport(){
 }
 function editorPane(){
   const mons = teamDraft.pokemon;
-  if(!mons.length) return `<div class="muted" style="padding:20px 0">Agregá un Pokémon o usá la pestaña Importar.</div>`;
+  if(typeof window._psTab==='undefined') window._psTab=0;
+  if(!mons.length){
+    return `<div class="ps-editor">
+      <div class="ps-sidebar">
+        <div class="ps-tab-add" onclick="addMon()" title="Agregar Pokémon">＋</div>
+      </div>
+      <div class="ps-main" style="display:flex;align-items:center;justify-content:center;color:var(--txt2);font-size:13px;flex-direction:column;gap:12px">
+        <div style="font-size:36px;opacity:0.2">⊕</div>
+        <div>Hacé clic en <b>＋</b> para agregar tu primer Pokémon</div>
+      </div>
+    </div>`;
+  }
   // currentPsTab is a global index
   if(typeof window._psTab==='undefined') window._psTab=0;
   window._psTab = Math.min(window._psTab, mons.length-1);
