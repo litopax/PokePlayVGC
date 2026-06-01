@@ -9,6 +9,7 @@
 <title>VGC Tracker — Red social competitiva</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="pokedata.js"></script>
 <style>
 :root{
   --bg:#0a0a14; --panel:#12121f; --panel2:#1a1a2b; --line:#262640;
@@ -120,6 +121,9 @@ textarea.field{resize:vertical;min-height:80px;font-family:monospace;font-size:1
 .ac-item.active,.ac-item:hover{background:rgba(123,92,255,.25)}
 .ac-item img{width:24px;height:24px;image-rendering:pixelated}
 .ac-item b{color:var(--holo2)}
+.ac-ok{color:var(--win);margin-right:5px;font-weight:700}
+.ac-meta{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--txt2);flex-shrink:0}
+.ac-type{color:#fff;padding:1px 6px;border-radius:5px;font-size:9px;text-transform:uppercase;letter-spacing:.3px}
 </style>
 </head>
 <body>
@@ -207,30 +211,75 @@ moves:["10,000,000 Volt Thunderbolt","Absorb","Accelerock","Acid","Acid Armor","
 const SPRITE = n => `https://img.pokemondb.net/sprites/home/normal/${n.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}.png`;
 
 /* ════════════════ AUTOCOMPLETADO (teclado: ↑ ↓ Enter Esc) ════════════════ */
-const AC_SOURCE={ mon:()=>PKDATA.mons, item:()=>PKDATA.items, ability:()=>PKDATA.abil, move:()=>PKDATA.moves };
-let acState=null; // {input, list, kind, items, idx, onPick}
+const PD = (typeof window!=='undefined' && window.POKEDATA) ? window.POKEDATA : null;
+// resolver datos de una especie (con fallback a forma base)
+function speciesData(name){
+  if(!PD||!name) return null;
+  if(PD.species[name]) return PD.species[name];
+  const base=name.split('-')[0];
+  return PD.species[base]||null;
+}
+function speciesLearnset(name){
+  if(!PD||!name) return null;
+  const get=n=>PD.learn.l[n]? PD.learn.l[n].map(idx=>PD.learn.m[idx]) : null;
+  return get(name) || get(name.split('-')[0]) || null;
+}
+const TYPECOLOR={Normal:'#9fa19f',Fire:'#ff6f3c',Water:'#4f8fff',Electric:'#f7d02c',Grass:'#5fbd58',Ice:'#74cec0',Fighting:'#d3425f',Poison:'#b763cf',Ground:'#da7c4d',Flying:'#8ca8ff',Psychic:'#fa8581',Bug:'#92bc2c',Rock:'#c9bb8a',Ghost:'#5f6dbc',Dragon:'#0c69c8',Dark:'#595761',Steel:'#5695a3',Fairy:'#ee90e6',Stellar:'#7b5cff'};
+const CATICON={Physical:'⚔️',Special:'✨',Status:'🔁'};
 
-function acFilter(kind,q){
-  q=q.trim().toLowerCase(); if(!q) return [];
-  const src=AC_SOURCE[kind](); const starts=[],contains=[];
+const AC_SOURCE={ mon:()=>PKDATA.mons, item:()=>PKDATA.items, ability:()=>PKDATA.abil, move:()=>PKDATA.moves };
+let acState=null;
+
+// devuelve [{name, legal}] priorizando lo legal del Pokémon (si aplica)
+function acFilter(kind,q,monName){
+  q=q.trim().toLowerCase();
+  // listas "legales" según el Pokémon
+  let legalSet=null;
+  if(monName){
+    if(kind==='ability'){ const sd=speciesData(monName); if(sd&&sd.a) legalSet=new Set(sd.a); }
+    else if(kind==='move'){ const ls=speciesLearnset(monName); if(ls) legalSet=new Set(ls); }
+  }
+  const src=AC_SOURCE[kind]();
+  const legalStarts=[],legalContains=[],restStarts=[],restContains=[];
   for(const name of src){
     const low=name.toLowerCase();
-    if(low.startsWith(q)) starts.push(name);
-    else if(low.includes(q)) contains.push(name);
-    if(starts.length>=20) break;
+    const isLegal=legalSet? legalSet.has(name) : false;
+    let bucket;
+    if(!q){ // sin texto: si hay legales, mostrar solo esos
+      if(legalSet){ if(isLegal) bucket=legalStarts; else continue; }
+      else continue;
+    } else if(low.startsWith(q)) bucket=isLegal?legalStarts:restStarts;
+    else if(low.includes(q))     bucket=isLegal?legalContains:restContains;
+    else continue;
+    bucket.push({name,legal:isLegal});
   }
-  return starts.concat(contains).slice(0,20);
+  const ordered=legalStarts.concat(legalContains,restStarts,restContains);
+  return ordered.slice(0,30);
+}
+function acItemMeta(kind,name){
+  if(kind==='move' && PD && PD.moves[name]){
+    const m=PD.moves[name], col=TYPECOLOR[m.t]||'#888';
+    return `<span class="ac-meta"><span class="ac-type" style="background:${col}">${m.t}</span>${CATICON[m.c]||''}${m.p?` ${m.p}`:''}</span>`;
+  }
+  if(kind==='mon'){
+    const sd=speciesData(name);
+    if(sd&&sd.t) return `<span class="ac-meta">${sd.t.map(t=>`<span class="ac-type" style="background:${TYPECOLOR[t]||'#888'}">${t}</span>`).join('')}</span>`;
+  }
+  return '';
 }
 function acOpen(input){
   const kind=input.dataset.ac, q=input.value;
-  const items=acFilter(kind,q);
+  const monName=input.dataset.mon!==undefined ? (teamDraft&&teamDraft.pokemon[+input.dataset.mon]? teamDraft.pokemon[+input.dataset.mon].name : '') : '';
+  const items=acFilter(kind,q,monName);
   acClose();
   if(!items.length) return;
   const list=document.createElement('div'); list.className='ac-list';
-  list.innerHTML=items.map((n,i)=>`<div class="ac-item${i===0?' active':''}" data-i="${i}">${kind==='mon'?`<img src="${SPRITE(n)}" onerror="this.style.visibility='hidden'">`:''}${acHL(n,q)}</div>`).join('');
+  list.innerHTML=items.map((it,i)=>`<div class="ac-item${i===0?' active':''}" data-i="${i}">
+    ${kind==='mon'?`<img src="${SPRITE(it.name)}" onerror="this.style.visibility='hidden'">`:''}
+    <span style="flex:1">${it.legal?'<span class="ac-ok">✓</span>':''}${acHL(it.name,q)}</span>
+    ${acItemMeta(kind,it.name)}</div>`).join('');
   input.parentNode.appendChild(list);
-  acState={input,list,kind,items,idx:0};
-  // click en opción
+  acState={input,list,kind,items:items.map(x=>x.name),idx:0};
   list.querySelectorAll('.ac-item').forEach(el=>{
     el.addEventListener('mousedown',e=>{ e.preventDefault(); acPick(parseInt(el.dataset.i,10)); });
     el.addEventListener('mouseenter',()=>{ acState.idx=parseInt(el.dataset.i,10); acPaint(); });
@@ -527,6 +576,15 @@ function editorPane(){
     ${!mons.length?'<div class="muted">Agregá un Pokémon o usá la pestaña Importar.</div>':''}
   </div>`;
 }
+function monInfoLine(name){
+  const sd=speciesData(name);
+  if(!sd) return '';
+  const types=(sd.t||[]).map(t=>`<span class="ac-type" style="background:${TYPECOLOR[t]||'#888'}">${t}</span>`).join(' ');
+  const b=sd.b||{};
+  const bst=['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(b[k]||0),0);
+  const stats=`<span class="muted" style="font-size:10px">HP ${b.hp} · Atk ${b.atk} · Def ${b.def} · SpA ${b.spa} · SpD ${b.spd} · Spe ${b.spe} · <b style="color:var(--accent)">BST ${bst}</b></span>`;
+  return `<div class="row" style="gap:8px;margin:-4px 0 10px;align-items:center;flex-wrap:wrap">${types} ${stats}</div>`;
+}
 function monEditor(p,i){
   const st=k=>`<input class="field" style="padding:6px 8px;font-size:12px;text-align:center" placeholder="-" value="${p.evs[k]??''}" oninput="setStat(${i},'evs','${k}',this.value)">`;
   const iv=k=>`<input class="field" style="padding:6px 8px;font-size:12px;text-align:center" placeholder="31" value="${p.ivs[k]??''}" oninput="setStat(${i},'ivs','${k}',this.value)">`;
@@ -535,10 +593,11 @@ function monEditor(p,i){
       <div class="row" style="gap:8px;flex:1"><img src="${SPRITE(p.name)}" onerror="this.style.visibility='hidden'" style="width:40px;height:40px;image-rendering:pixelated">
         <div class="ac-wrap" style="flex:1"><input class="field" style="font-weight:600" data-ac="mon" autocomplete="off" placeholder="Pokémon (ej: Incineroar)" value="${esc(p.name)}" oninput="setMon(${i},'name',this.value)"></div></div>
       <button class="btn red sm" onclick="rmMon(${i})" style="margin-left:8px">✕</button></div>
+    ${monInfoLine(p.name)}
     <div class="grid" style="grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
       <div><label>Mote</label><input class="field" value="${esc(p.nickname)}" oninput="setMon(${i},'nickname',this.value)"></div>
       <div><label>Objeto</label><div class="ac-wrap"><input class="field" data-ac="item" autocomplete="off" value="${esc(p.item)}" oninput="setMon(${i},'item',this.value)"></div></div>
-      <div><label>Habilidad</label><div class="ac-wrap"><input class="field" data-ac="ability" autocomplete="off" value="${esc(p.ability)}" oninput="setMon(${i},'ability',this.value)"></div></div>
+      <div><label>Habilidad</label><div class="ac-wrap"><input class="field" data-ac="ability" data-mon="${i}" autocomplete="off" value="${esc(p.ability)}" oninput="setMon(${i},'ability',this.value)"></div></div>
       <div><label>Naturaleza</label><select class="field" onchange="setMon(${i},'nature',this.value)">${NATURES.map(n=>`<option ${n===p.nature?'selected':''}>${n}</option>`).join('')}</select></div>
       <div><label>Tera Type</label><select class="field" onchange="setMon(${i},'teraType',this.value)">${TERA.map(n=>`<option ${n===p.teraType?'selected':''}>${n}</option>`).join('')}</select></div>
       <div><label>Nivel</label><input class="field" placeholder="50" value="${esc(p.level)}" oninput="setMon(${i},'level',this.value)"></div>
@@ -553,11 +612,25 @@ function monEditor(p,i){
     </div>
     <label>Movimientos</label>
     <div class="grid" style="grid-template-columns:1fr 1fr;gap:6px">
-      ${[0,1,2,3].map(m=>`<div class="ac-wrap"><input class="field" style="font-size:12px" data-ac="move" autocomplete="off" placeholder="Movimiento ${m+1}" value="${esc(p.moves[m]||'')}" oninput="setMove(${i},${m},this.value)"></div>`).join('')}
+      ${[0,1,2,3].map(m=>`<div class="ac-wrap"><input class="field" style="font-size:12px" data-ac="move" data-mon="${i}" autocomplete="off" placeholder="Movimiento ${m+1}" value="${esc(p.moves[m]||'')}" oninput="setMove(${i},${m},this.value)"></div>`).join('')}
     </div>
   </div>`;
 }
-function setMon(i,k,v){ teamDraft.pokemon[i][k]=v; if(k==='name'){ /* refrescar sprite sin re-render completo */ } }
+function setMon(i,k,v){
+  teamDraft.pokemon[i][k]=v;
+  if(k==='name'){
+    // si la especie tiene una sola habilidad y aún no se eligió, sugerirla
+    const sd=speciesData(v);
+    if(sd && sd.a && sd.a.length===1 && !teamDraft.pokemon[i].ability) teamDraft.pokemon[i].ability=sd.a[0];
+    scheduleMonRefresh(i);
+  }
+}
+// re-render diferido del editor cuando cambia la especie (sin perder el foco al tipear)
+let monRefreshT=null;
+function scheduleMonRefresh(i){
+  clearTimeout(monRefreshT);
+  monRefreshT=setTimeout(()=>{ if(teamTab==='editor'){ const act=document.activeElement; const isMonInput=act&&act.dataset&&act.dataset.ac==='mon'; if(!isMonInput) renderTeamModal(); } },400);
+}
 function setMove(i,m,v){ teamDraft.pokemon[i].moves[m]=v; }
 function setStat(i,grp,k,v){ const n=parseInt(v,10); if(v===''||isNaN(n)) delete teamDraft.pokemon[i][grp][k]; else teamDraft.pokemon[i][grp][k]=n; }
 function addMon(){ teamDraft.pokemon.push(blankMon()); renderTeamModal(); }
