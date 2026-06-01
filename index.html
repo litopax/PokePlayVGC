@@ -448,13 +448,28 @@ async function renderTeams(){
 }
 function teamCard(t,own){
   const mons=(t.pokemon||[]).slice(0,6);
+  teamCache[t.id]=t; // para visualizar/editar sin re-fetch
   return `<div class="teamcard">
     <div class="teamhead"><div><div class="bebas" style="font-size:20px">${esc(t.name)}</div>
       <span class="tag">${t.is_public?'Público':'Privado'}</span></div>
-      ${own?`<div class="row" style="gap:6px"><button class="btn ghost sm" onclick='openTeam(${JSON.stringify(t).replace(/'/g,"&#39;")})'>Editar</button>
-      <button class="btn red sm" onclick="delTeam('${t.id}')">✕</button></div>`:''}</div>
+      <div class="row" style="gap:6px">
+        <button class="btn ghost sm" onclick="visualizeTeam('${t.id}')">👁 Visualización</button>
+        ${own?`<button class="btn ghost sm" onclick="editTeamById('${t.id}')">Editar</button>
+        <button class="btn red sm" onclick="delTeam('${t.id}')">✕</button>`:''}
+      </div></div>
     <div class="mons">${mons.map(p=>`<span class="mon"><img src="${SPRITE(p.name)}" onerror="this.style.display='none'" alt="">${esc(p.name)}</span>`).join('')||'<span class="muted">Sin pokémon</span>'}</div>
   </div>`;
+}
+let teamCache={};
+function editTeamById(id){ openTeam(teamCache[id]); }
+function visualizeTeam(id){
+  const t=teamCache[id];
+  if(!t){ alert('No encuentro el team.'); return; }
+  const showdown=exportShowdown(t.pokemon);
+  try{ localStorage.setItem('pokedex_import_team',showdown); }
+  catch(e){ alert('No se pudo preparar la visualización.'); return; }
+  const win=window.open('visualizador.html','_blank');
+  if(!win){ alert('El navegador bloqueó la ventana emergente. Permití pop-ups para este sitio y volvé a intentar.'); }
 }
 function openTeam(t){
   t=t||{name:'',pokemon:[],is_public:true};
