@@ -2,6 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VGC Tracker — Red social competitiva</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -782,10 +785,31 @@ async function renderProfile(uid){
 
   sb.auth.onAuthStateChange(async(event)=>{
     if(event==='PASSWORD_RECOVERY'){ recovering=true; route(); return; }
-    await loadMe(); route();
+    try{ await loadMe(); route(); }catch(e){ initFallback(e); }
   });
-  await loadMe(); route();
+  try{ await loadMe(); route(); }catch(e){ initFallback(e); }
 })();
+
+function initFallback(err){
+  console.error('Error al iniciar:',err);
+  const app=$('app');
+  $('authView').classList.add('hidden');
+  app.classList.remove('hidden');
+  app.innerHTML=`<div class="card" style="max-width:480px;margin:10vh auto;text-align:center">
+    <div class="bebas" style="font-size:24px;margin-bottom:10px">Algo no cargó bien</div>
+    <div class="muted" style="margin-bottom:16px">Puede ser una conexión intermitente o datos guardados viejos. Probá reintentar; si sigue, reiniciá la sesión.</div>
+    <div class="row" style="justify-content:center;gap:8px">
+      <button class="btn" onclick="location.reload()">Reintentar</button>
+      <button class="btn ghost" onclick="hardReset()">Reiniciar sesión</button>
+    </div>
+    <div class="muted" style="margin-top:14px;font-size:11px">${esc(err&&err.message||'')}</div>
+  </div>`;
+}
+async function hardReset(){
+  try{ await sb.auth.signOut(); }catch(e){}
+  try{ Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k)); }catch(e){}
+  location.reload();
+}
 </script>
 </body>
 </html>
