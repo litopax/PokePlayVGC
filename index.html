@@ -242,6 +242,40 @@ const configured = SUPABASE_URL.startsWith("http") && SUPABASE_ANON_KEY.length >
 let sb = null;
 if (configured) sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+
+const BUILDER_LEVEL = '50';
+const STAT_BUDGET = 66;
+const STAT_MAX = 66;
+const STAT_KEYS_BUILD = ['hp','atk','def','spa','spd','spe'];
+function statTotal(evs){ return STAT_KEYS_BUILD.reduce((s,k)=>s+(parseInt(evs?.[k],10)||0),0); }
+function clampStatPoint(v){ v=parseInt(v,10); return Number.isFinite(v) ? Math.max(0, Math.min(STAT_MAX, v)) : 0; }
+function normalizeStatPoints(evs){
+  evs = evs || {};
+  const raw = {};
+  STAT_KEYS_BUILD.forEach(k=>{ raw[k]=parseInt(evs[k],10)||0; });
+  let total = STAT_KEYS_BUILD.reduce((s,k)=>s+raw[k],0);
+  // Si viene de Showdown con EVs clásicos, convertir a puntos reales de stat aprox. nivel 50.
+  if (STAT_KEYS_BUILD.some(k=>raw[k]>STAT_MAX) || total>STAT_BUDGET) {
+    STAT_KEYS_BUILD.forEach(k=>{ raw[k]=Math.max(0, Math.round(raw[k]/8)); });
+  }
+  const clean = {};
+  let used = 0;
+  STAT_KEYS_BUILD.forEach(k=>{
+    const room = Math.max(0, STAT_BUDGET-used);
+    const v = Math.min(clampStatPoint(raw[k]), room);
+    if(v>0) clean[k]=v;
+    used += v;
+  });
+  return clean;
+}
+function normalizeMonBuild(p){
+  p = p || {};
+  p.level = BUILDER_LEVEL;
+  p.evs = normalizeStatPoints(p.evs || {});
+  delete p.ivs;
+  return p;
+}
+
 const PKDATA={
 mons:["Ababo","Abomasnow","Abomasnow-Mega","Abra","Absol","Absol-Mega","Absol-Mega-Z","Accelgor","Aegislash","Aegislash-Blade","Aerodactyl","Aerodactyl-Mega","Aggron","Aggron-Mega","Aipom","Alakazam","Alakazam-Mega","Alcremie","Alcremie-Caramel-Swirl","Alcremie-Gmax","Alcremie-Lemon-Cream","Alcremie-Matcha-Cream","Alcremie-Mint-Cream","Alcremie-Rainbow-Swirl","Alcremie-Ruby-Cream","Alcremie-Ruby-Swirl","Alomomola","Altaria","Altaria-Mega","Amaura","Ambipom","Amoonguss","Ampharos","Ampharos-Mega","Annihilape","Anorith","Appletun","Appletun-Gmax","Applin","Araquanid","Araquanid-Totem","Arbok","Arboliva","Arcanine","Arcanine-Hisui","Arceus","Arceus-Bug","Arceus-Dark","Arceus-Dragon","Arceus-Electric","Arceus-Fairy","Arceus-Fighting","Arceus-Fire","Arceus-Flying","Arceus-Ghost","Arceus-Grass","Arceus-Ground","Arceus-Ice","Arceus-Poison","Arceus-Psychic","Arceus-Rock","Arceus-Steel","Arceus-Water","Archaludon","Archen","Archeops","Arctibax","Arctovish","Arctozolt","Argalis","Arghonaut","Ariados","Armaldo","Armarouge","Aromatisse","Aron","Arrokuda","Articuno","Articuno-Galar","Astrolotl","Audino","Audino-Mega","Aurorus","Aurumoth","Avalugg","Avalugg-Hisui","Axew","Azelf","Azumarill","Azurill","Bagon","Baltoy","Banette","Banette-Mega","Barbaracle","Barbaracle-Mega","Barboach","Barraskewda","Basculegion","Basculegion-F","Basculin","Basculin-Blue-Striped","Basculin-White-Striped","Bastiodon","Baxcalibur","Baxcalibur-Mega","Bayleef","Beartic","Beautifly","Beedrill","Beedrill-Mega","Beheeyem","Beldum","Bellibolt","Bellossom","Bellsprout","Bergmite","Bewear","Bibarel","Bidoof","Binacle","Bisharp","Blacephalon","Blastoise","Blastoise-Gmax","Blastoise-Mega","Blaziken","Blaziken-Mega","Blipbug","Blissey","Blitzle","Boldore","Boltund","Bombirdier","Bonsly","Bouffalant","Bounsweet","Braixen","Brambleghast","Bramblin","Brattler","Braviary","Braviary-Hisui","Breezi","Breloom","Brionne","Bronzong","Bronzor","Brute Bonnet","Bruxish","Budew","Buizel","Bulbasaur","Buneary","Bunnelby","Burmy","Burmy-Sandy","Burmy-Trash","Butterfree","Butterfree-Gmax","Buzzwole","Cacnea","Cacturne","Caimanoe","Calyrex","Calyrex-Ice","Calyrex-Shadow","Camerupt","Camerupt-Mega","Capsakid","Carbink","Caribolt","Carkol","Carnivine","Carracosta","Carvanha","Cascoon","Castform","Castform-Rainy","Castform-Snowy","Castform-Sunny","Caterpie","Cawdet","Cawmodore","Celebi","Celesteela","Centiskorch","Centiskorch-Gmax","Ceruledge","Cetitan","Cetoddle","Chandelure","Chandelure-Mega","Chansey","Charcadet","Charizard","Charizard-Gmax","Charizard-Mega-X","Charizard-Mega-Y","Charjabug","Charmander","Charmeleon","Chatot","Cherrim","Cherrim-Sunshine","Cherubi","Chesnaught","Chesnaught-Mega","Chespin","Chewtle","Chi-Yu","Chien-Pao","Chikorita","Chimchar","Chimecho","Chimecho-Mega","Chinchou","Chingling","Chromera","Chuggalong","Chuggon","Cinccino","Cinderace","Cinderace-Gmax","Clamperl","Clauncher","Clawitzer","Claydol","Clefable","Clefable-Mega","Clefairy","Cleffa","Clobbopus","Clodsire","Cloyster","Coalossal","Coalossal-Gmax","Cobalion","Cofagrigus","Colossoil","Combee","Combusken","Comfey","Conkeldurr","Copperajah","Copperajah-Gmax","Coribalis","Corphish","Corsola","Corsola-Galar","Corviknight","Corviknight-Gmax","Corvisquire","Cosmoem","Cosmog","Cottonee","Crabominable","Crabominable-Mega","Crabrawler","Cradily","Cramorant","Cramorant-Gorging","Cramorant-Gulping","Cranidos","Crawdaunt","Cresceidon","Cresselia","Croagunk","Crobat","Crocalor","Croconaw","Crucibelle","Crucibelle-Mega","Crustle","Cryogonal","Cubchoo","Cubone","Cufant","Cupra","Cursola","Cutiefly","Cyclizar","Cyclohm","Cyndaquil","Dachsbun","Darkrai","Darkrai-Mega","Darmanitan","Darmanitan-Galar","Darmanitan-Galar-Zen","Darmanitan-Zen","Dartrix","Darumaka","Darumaka-Galar","Decidueye","Decidueye-Hisui","Dedenne","Deerling","Deerling-Autumn","Deerling-Summer","Deerling-Winter","Deino","Delcatty","Delibird","Delphox","Delphox-Mega","Deoxys","Deoxys-Attack","Deoxys-Defense","Deoxys-Speed","Dewgong","Dewott","Dewpider","Dhelmise","Dialga","Dialga-Origin","Diancie","Diancie-Mega","Diggersby","Diglett","Diglett-Alola","Dipplin","Ditto","Dodrio","Doduo","Dolliv","Dondozo","Donphan","Dorsoil","Dottler","Doublade","Dracovish","Dracozolt","Dragalge","Dragalge-Mega","Dragapult","Draggalong","Dragonair","Dragonite","Dragonite-Mega","Drakloak","Drampa","Drampa-Mega","Drapion","Dratini","Drednaw","Drednaw-Gmax","Dreepy","Drifblim","Drifloon","Drilbur","Drizzile","Drowzee","Druddigon","Dubwool","Ducklett","Dudunsparce","Dudunsparce-Three-Segment","Dugtrio","Dugtrio-Alola","Dunsparce","Duohm","Duosion","Duraludon","Duraludon-Gmax","Durant","Dusclops","Dusknoir","Duskull","Dustox","Dwebble","Eelektrik","Eelektross","Eelektross-Mega","Eevee","Eevee-Gmax","Eevee-Starter","Eiscue","Eiscue-Noice","Ekans","Eldegoss","Electabuzz","Electivire","Electrelk","Electrike","Electrode","Electrode-Hisui","Elekid","Elgyem","Embirch","Emboar","Emboar-Mega","Emolga","Empoleon","Enamorus","Enamorus-Therian","Entei","Equilibra","Escavalier","Espathra","Espeon","Espurr","Eternatus","Eternatus-Eternamax","Excadrill","Excadrill-Mega","Exeggcute","Exeggutor","Exeggutor-Alola","Exploud","Falinks","Falinks-Mega","Farfetch’d","Farfetch’d-Galar","Farigiraf","Fawnifer","Fearow","Feebas","Fennekin","Feraligatr","Feraligatr-Mega","Ferroseed","Ferrothorn","Fezandipiti","Fidgit","Fidough","Finizen","Finneon","Flaaffy","Flabébé","Flamigo","Flapple","Flapple-Gmax","Flarelm","Flareon","Fletchinder","Fletchling","Flittle","Floatoy","Floatzel","Floette","Floette-Eternal","Floette-Mega","Floragato","Florges","Flox","Flutter Mane","Flygon","Fomantis","Foongus","Forretress","Fraxure","Frigibax","Frillish","Froakie","Frogadier","Froslass","Froslass-Mega","Frosmoth","Fuecoco","Furfrou","Furret","Gabite","Gallade","Gallade-Mega","Galvantula","Garbodor","Garbodor-Gmax","Garchomp","Garchomp-Mega","Garchomp-Mega-Z","Gardevoir","Gardevoir-Mega","Garganacl","Gastly","Gastrodon","Gastrodon-East","Genesect","Genesect-Burn","Genesect-Chill","Genesect-Douse","Genesect-Shock","Gengar","Gengar-Gmax","Gengar-Mega","Geodude","Geodude-Alola","Gholdengo","Gible","Gigalith","Gimmighoul","Gimmighoul-Roaming","Girafarig","Giratina","Giratina-Origin","Glaceon","Glalie","Glalie-Mega","Glameow","Glastrier","Gligar","Glimmet","Glimmora","Glimmora-Mega","Gliscor","Gloom","Gogoat","Golbat","Goldeen","Golduck","Golem","Golem-Alola","Golett","Golisopod","Golisopod-Mega","Golurk","Golurk-Mega","Goodra","Goodra-Hisui","Goomy","Gorebyss","Gossifleur","Gothita","Gothitelle","Gothorita","Gouging Fire","Gourgeist","Gourgeist-Large","Gourgeist-Small","Gourgeist-Super","Grafaiai","Granbull","Grapploct","Graveler","Graveler-Alola","Great Tusk","Greavard","Greedent","Greninja","Greninja-Ash","Greninja-Bond","Greninja-Mega","Grimer","Grimer-Alola","Grimmsnarl","Grimmsnarl-Gmax","Grookey","Grotle","Groudon","Groudon-Primal","Grovyle","Growlithe","Growlithe-Hisui","Grubbin","Grumpig","Gulpin","Gumshoos","Gumshoos-Totem","Gurdurr","Guzzlord","Gyarados","Gyarados-Mega","Hakamo-o","Happiny","Hariyama","Hatenna","Hatterene","Hatterene-Gmax","Hattrem","Haunter","Hawlucha","Hawlucha-Mega","Haxorus","Heatmor","Heatran","Heatran-Mega","Heliolisk","Helioptile","Hemogoblin","Heracross","Heracross-Mega","Herdier","Hippopotas","Hippowdon","Hitmonchan","Hitmonlee","Hitmontop","Ho-Oh","Honchkrow","Honedge","Hoopa","Hoopa-Unbound","Hoothoot","Hoppip","Horsea","Houndoom","Houndoom-Mega","Houndour","Houndstone","Huntail","Hydrapple","Hydreigon","Hypno","Igglybuff","Illumise","Impidimp","Incineroar","Indeedee","Indeedee-F","Infernape","Inkay","Inteleon","Inteleon-Gmax","Iron Boulder","Iron Bundle","Iron Crown","Iron Hands","Iron Jugulis","Iron Leaves","Iron Moth","Iron Thorns","Iron Treads","Iron Valiant","Ivysaur","Jangmo-o","Jellicent","Jigglypuff","Jirachi","Jolteon","Joltik","Jumbao","Jumpluff","Justyke","Jynx","Kabuto","Kabutops","Kadabra","Kakuna","Kangaskhan","Kangaskhan-Mega","Karrablast","Kartana","Kecleon","Keldeo","Keldeo-Resolute","Kerfluffle","Kilowattrel","Kingambit","Kingdra","Kingler","Kingler-Gmax","Kirlia","Kitsunoh","Klang","Klawf","Kleavor","Klefki","Klink","Klinklang","Koffing","Komala","Kommo-o","Kommo-o-Totem","Koraidon","Krabby","Kricketot","Kricketune","Krilowatt","Krokorok","Krookodile","Kubfu","Kyogre","Kyogre-Primal","Kyurem","Kyurem-Black","Kyurem-White","Lairon","Lampent","Landorus","Landorus-Therian","Lanturn","Lapras","Lapras-Gmax","Larvesta","Larvitar","Latias","Latias-Mega","Latios","Latios-Mega","Leafeon","Leavanny","Lechonk","Ledian","Ledyba","Lickilicky","Lickitung","Liepard","Lileep","Lilligant","Lilligant-Hisui","Lillipup","Linoone","Linoone-Galar","Litleo","Litten","Litwick","Lokix","Lombre","Lopunny","Lopunny-Mega","Lotad","Loudred","Lucario","Lucario-Mega","Lucario-Mega-Z","Ludicolo","Lugia","Lumineon","Lunala","Lunatone","Lurantis","Lurantis-Totem","Luvdisc","Luxio","Luxray","Lycanroc","Lycanroc-Dusk","Lycanroc-Midnight","Mabosstiff","Machamp","Machamp-Gmax","Machoke","Machop","Magby","Magcargo","Magearna","Magearna-Mega","Magearna-Original","Magearna-Original-Mega","Magikarp","Magmar","Magmortar","Magnemite","Magneton","Magnezone","Makuhita","Malaconda","Malamar","Malamar-Mega","Mamoswine","Manaphy","Mandibuzz","Manectric","Manectric-Mega","Mankey","Mantine","Mantyke","Maractus","Mareanie","Mareep","Marill","Marowak","Marowak-Alola","Marowak-Alola-Totem","Marshadow","Marshtomp","Maschiff","Masquerain","Maushold","Maushold-Four","Mawile","Mawile-Mega","Medicham","Medicham-Mega","Meditite","Meganium","Meganium-Mega","Melmetal","Melmetal-Gmax","Meloetta","Meloetta-Pirouette","Meltan","Meowscarada","Meowstic","Meowstic-F","Meowstic-F-Mega","Meowstic-M-Mega","Meowth","Meowth-Alola","Meowth-Galar","Meowth-Gmax","Mesprit","Metagross","Metagross-Mega","Metang","Metapod","Mew","Mewtwo","Mewtwo-Mega-X","Mewtwo-Mega-Y","Miasmaw","Miasmite","Mienfoo","Mienshao","Mightyena","Milcery","Milotic","Miltank","Mime Jr.","Mimikyu","Mimikyu-Busted","Mimikyu-Busted-Totem","Mimikyu-Totem","Minccino","Minior","Minior-Blue","Minior-Green","Minior-Indigo","Minior-Meteor","Minior-Orange","Minior-Violet","Minior-Yellow","Minun","Miraidon","Misdreavus","Mismagius","MissingNo.","Mollux","Moltres","Moltres-Galar","Monferno","Monohm","Morelull","Morgrem","Morpeko","Morpeko-Hangry","Mothim","Mr. Mime","Mr. Mime-Galar","Mr. Rime","Mudbray","Mudkip","Mudsdale","Muk","Muk-Alola","Mumbao","Munchlax","Munkidori","Munna","Murkrow","Musharna","Nacli","Naclstack","Naganadel","Natu","Naviathan","Necrozma","Necrozma-Dawn-Wings","Necrozma-Dusk-Mane","Necrozma-Ultra","Necturine","Necturna","Nickit","Nidoking","Nidoqueen","Nidoran-F","Nidoran-M","Nidorina","Nidorino","Nihilego","Nincada","Ninetales","Ninetales-Alola","Ninjask","Noctowl","Nohface","Noibat","Noivern","Nosepass","Numel","Nuzleaf","Nymble","Obstagoon","Octillery","Oddish","Ogerpon","Ogerpon-Cornerstone","Ogerpon-Cornerstone-Tera","Ogerpon-Hearthflame","Ogerpon-Hearthflame-Tera","Ogerpon-Teal-Tera","Ogerpon-Wellspring","Ogerpon-Wellspring-Tera","Oinkologne","Oinkologne-F","Okidogi","Omanyte","Omastar","Onix","Oranguru","Orbeetle","Orbeetle-Gmax","Oricorio","Oricorio-Pa'u","Oricorio-Pom-Pom","Oricorio-Sensu","Orthworm","Oshawott","Overqwil","Pachirisu","Pajantom","Palafin","Palafin-Hero","Palkia","Palkia-Origin","Palossand","Palpitoad","Pancham","Pangoro","Panpour","Pansage","Pansear","Paras","Parasect","Passimian","Patrat","Pawmi","Pawmo","Pawmot","Pawniard","Pecharunt","Pelipper","Perrserker","Persian","Persian-Alola","Petilil","Phanpy","Phantump","Pheromosa","Phione","Pichu","Pichu-Spiky-eared","Pidgeot","Pidgeot-Mega","Pidgeotto","Pidgey","Pidove","Pignite","Pikachu","Pikachu-Alola","Pikachu-Belle","Pikachu-Cosplay","Pikachu-Gmax","Pikachu-Hoenn","Pikachu-Kalos","Pikachu-Libre","Pikachu-Original","Pikachu-Partner","Pikachu-PhD","Pikachu-Pop-Star","Pikachu-Rock-Star","Pikachu-Sinnoh","Pikachu-Starter","Pikachu-Unova","Pikachu-World","Pikipek","Piloswine","Pincurchin","Pineco","Pinsir","Pinsir-Mega","Piplup","Plasmanta","Pluffle","Plusle","Poipole","Pokestar Black Belt","Pokestar Black Door","Pokestar Brycen-Man","Pokestar F-00","Pokestar F-002","Pokestar Giant","Pokestar Humanoid","Pokestar Monster","Pokestar MT","Pokestar MT2","Pokestar Smeargle","Pokestar Spirit","Pokestar Transport","Pokestar UFO","Pokestar UFO-2","Pokestar UFO-PropU2","Pokestar White Door","Politoed","Poliwag","Poliwhirl","Poliwrath","Poltchageist","Poltchageist-Artisan","Polteageist","Polteageist-Antique","Ponyta","Ponyta-Galar","Poochyena","Popplio","Porygon","Porygon-Z","Porygon2","Primarina","Primeape","Prinplup","Privatyke","Probopass","Protowatt","Psyduck","Pumpkaboo","Pumpkaboo-Large","Pumpkaboo-Small","Pumpkaboo-Super","Pupitar","Purrloin","Purugly","Pyroak","Pyroar","Pyroar-Mega","Pyukumuku","Quagsire","Quaquaval","Quaxly","Quaxwell","Quilava","Quilladin","Qwilfish","Qwilfish-Hisui","Raboot","Rabsca","Raging Bolt","Raichu","Raichu-Alola","Raichu-Mega-X","Raichu-Mega-Y","Raikou","Ralts","Ramnarok","Ramnarok-Radiant","Rampardos","Rapidash","Rapidash-Galar","Raticate","Raticate-Alola","Raticate-Alola-Totem","Rattata","Rattata-Alola","Rayquaza","Rayquaza-Mega","Rebble","Regice","Regidrago","Regieleki","Regigigas","Regirock","Registeel","Relicanth","Rellor","Remoraid","Reshiram","Reuniclus","Revavroom","Revenankh","Rhydon","Rhyhorn","Rhyperior","Ribombee","Ribombee-Totem","Rillaboom","Rillaboom-Gmax","Riolu","Roaring Moon","Rockruff","Rockruff-Dusk","Roggenrola","Rolycoly","Rookidee","Roselia","Roserade","Rotom","Rotom-Fan","Rotom-Frost","Rotom-Heat","Rotom-Mow","Rotom-Wash","Rowlet","Rufflet","Runerigus","Sableye","Sableye-Mega","Saharaja","Saharascal","Salamence","Salamence-Mega","Salandit","Salazzle","Salazzle-Totem","Samurott","Samurott-Hisui","Sandaconda","Sandaconda-Gmax","Sandile","Sandshrew","Sandshrew-Alola","Sandslash","Sandslash-Alola","Sandy Shocks","Sandygast","Sawk","Sawsbuck","Scatterbug","Scattervein","Sceptile","Sceptile-Mega","Scizor","Scizor-Mega","Scolipede","Scolipede-Mega","Scorbunny","Scovillain","Scovillain-Mega","Scrafty","Scrafty-Mega","Scraggy","Scratchet","Scream Tail","Scyther","Seadra","Seaking","Sealeo","Seedot","Seel","Seismitoad","Sentret","Serperior","Servine","Seviper","Sewaddle","Sharpedo","Sharpedo-Mega","Shaymin","Shaymin-Sky","Shedinja","Shelgon","Shellder","Shellos","Shellos-East","Shelmet","Shieldon","Shiftry","Shiinotic","Shinx","Shox","Shroodle","Shroomish","Shuckle","Shuppet","Sigilyph","Silcoon","Silicobra","Silvally","Silvally-Bug","Silvally-Dark","Silvally-Dragon","Silvally-Electric","Silvally-Fairy","Silvally-Fighting","Silvally-Fire","Silvally-Flying","Silvally-Ghost","Silvally-Grass","Silvally-Ground","Silvally-Ice","Silvally-Poison","Silvally-Psychic","Silvally-Rock","Silvally-Steel","Silvally-Water","Simipour","Simisage","Simisear","Sinistcha","Sinistcha-Masterpiece","Sinistea","Sinistea-Antique","Sirfetch’d","Sizzlipede","Skarmory","Skarmory-Mega","Skeledirge","Skiddo","Skiploom","Skitty","Skorupi","Skrelp","Skuntank","Skwovet","Slaking","Slakoth","Sliggoo","Sliggoo-Hisui","Slither Wing","Slowbro","Slowbro-Galar","Slowbro-Mega","Slowking","Slowking-Galar","Slowpoke","Slowpoke-Galar","Slugma","Slurpuff","Smeargle","Smogecko","Smoguana","Smokomodo","Smoliv","Smoochum","Snaelstrom","Sneasel","Sneasel-Hisui","Sneasler","Snivy","Snom","Snorlax","Snorlax-Gmax","Snorunt","Snover","Snubbull","Snugglow","Sobble","Solgaleo","Solosis","Solotl","Solrock","Spearow","Spectrier","Spewpa","Spheal","Spidops","Spinarak","Spinda","Spiritomb","Spoink","Sprigatito","Spritzee","Squawkabilly","Squawkabilly-Blue","Squawkabilly-White","Squawkabilly-Yellow","Squirtle","Stakataka","Stantler","Staraptor","Staraptor-Mega","Staravia","Starly","Starmie","Starmie-Mega","Staryu","Steelix","Steelix-Mega","Steenee","Stonjourner","Stoutland","Stratagem","Stufful","Stunfisk","Stunfisk-Galar","Stunky","Sudowoodo","Suicune","Sunflora","Sunkern","Surskit","Swablu","Swadloon","Swalot","Swampert","Swampert-Mega","Swanna","Swellow","Swinub","Swirlix","Swirlpool","Swoobat","Syclant","Syclar","Sylveon","Tactite","Tadbulb","Taillow","Talonflame","Tandemaus","Tangela","Tangrowth","Tapu Bulu","Tapu Fini","Tapu Koko","Tapu Lele","Tarountula","Tatsugiri","Tatsugiri-Curly-Mega","Tatsugiri-Droopy","Tatsugiri-Droopy-Mega","Tatsugiri-Stretchy","Tatsugiri-Stretchy-Mega","Tauros","Tauros-Paldea-Aqua","Tauros-Paldea-Blaze","Tauros-Paldea-Combat","Teddiursa","Tentacool","Tentacruel","Tepig","Terapagos","Terapagos-Stellar","Terapagos-Terastal","Terrakion","Thievul","Throh","Thundurus","Thundurus-Therian","Thwackey","Timburr","Ting-Lu","Tinkatink","Tinkaton","Tinkatuff","Tirtouga","Toedscool","Toedscruel","Togedemaru","Togedemaru-Totem","Togekiss","Togepi","Togetic","Tomohawk","Torchic","Torkoal","Tornadus","Tornadus-Therian","Torracat","Torterra","Totodile","Toucannon","Toxapex","Toxel","Toxicroak","Toxtricity","Toxtricity-Gmax","Toxtricity-Low-Key","Toxtricity-Low-Key-Gmax","Tranquill","Trapinch","Treecko","Trevenant","Tropius","Trubbish","Trumbeak","Tsareena","Turtonator","Turtwig","Tympole","Tynamo","Type: Null","Typhlosion","Typhlosion-Hisui","Tyranitar","Tyranitar-Mega","Tyrantrum","Tyrogue","Tyrunt","Umbreon","Unfezant","Unown","Ursaluna","Ursaluna-Bloodmoon","Ursaring","Urshifu","Urshifu-Gmax","Urshifu-Rapid-Strike","Urshifu-Rapid-Strike-Gmax","Uxie","Vanillish","Vanillite","Vanilluxe","Vaporeon","Varoom","Veluza","Venipede","Venomicon","Venomicon-Epilogue","Venomoth","Venonat","Venusaur","Venusaur-Gmax","Venusaur-Mega","Vespiquen","Vibrava","Victini","Victreebel","Victreebel-Mega","Vigoroth","Vikavolt","Vikavolt-Totem","Vileplume","Virizion","Vivillon","Vivillon-Archipelago","Vivillon-Continental","Vivillon-Elegant","Vivillon-Fancy","Vivillon-Garden","Vivillon-High Plains","Vivillon-Icy Snow","Vivillon-Jungle","Vivillon-Marine","Vivillon-Modern","Vivillon-Monsoon","Vivillon-Ocean","Vivillon-Pokeball","Vivillon-Polar","Vivillon-River","Vivillon-Sandstorm","Vivillon-Savanna","Vivillon-Sun","Vivillon-Tundra","Volbeat","Volcanion","Volcarona","Volkraken","Volkritter","Voltorb","Voltorb-Hisui","Voodoll","Voodoom","Vullaby","Vulpix","Vulpix-Alola","Wailmer","Wailord","Walking Wake","Walrein","Wartortle","Watchog","Wattrel","Weavile","Weedle","Weepinbell","Weezing","Weezing-Galar","Whimsicott","Whirlipede","Whiscash","Whismur","Wigglytuff","Wiglett","Wimpod","Wingull","Wishiwashi","Wishiwashi-School","Wo-Chien","Wobbuffet","Woobat","Wooloo","Wooper","Wooper-Paldea","Wormadam","Wormadam-Sandy","Wormadam-Trash","Wugtrio","Wurmple","Wynaut","Wyrdeer","Xatu","Xerneas","Xerneas-Neutral","Xurkitree","Yamask","Yamask-Galar","Yamper","Yanma","Yanmega","Yungoos","Yveltal","Zacian","Zacian-Crowned","Zamazenta","Zamazenta-Crowned","Zangoose","Zapdos","Zapdos-Galar","Zarude","Zarude-Dada","Zebstrika","Zekrom","Zeraora","Zeraora-Mega","Zigzagoon","Zigzagoon-Galar","Zoroark","Zoroark-Hisui","Zorua","Zorua-Hisui","Zubat","Zweilous","Zygarde","Zygarde-10%","Zygarde-Complete","Zygarde-Mega"],
 items:["Ability Shield","Abomasite","Absolite","Absolite Z","Absorb Bulb","Adamant Crystal","Adamant Orb","Adrenaline Orb","Aerodactylite","Aggronite","Aguav Berry","Air Balloon","Alakazite","Aloraichium Z","Altarianite","Ampharosite","Apicot Berry","Armor Fossil","Aspear Berry","Assault Vest","Audinite","Auspicious Armor","Babiri Berry","Banettite","Barbaracite","Baxcalibrite","Beast Ball","Beedrillite","Belue Berry","Berry","Berry Juice","Berry Sweet","Berserk Gene","Big Nugget","Big Root","Binding Band","Bitter Berry","Black Belt","Black Glasses","Black Sludge","Blastoisinite","Blazikenite","Blue Orb","Bluk Berry","Blunder Policy","Booster Energy","Bottle Cap","Bright Powder","Bug Gem","Bug Memory","Buginium Z","Burn Drive","Burnt Berry","Cameruptite","Cell Battery","Chandelurite","Charcoal","Charizardite X","Charizardite Y","Charti Berry","Cheri Berry","Cherish Ball","Chesnaughtite","Chesto Berry","Chilan Berry","Chill Drive","Chimechite","Chipped Pot","Choice Band","Choice Scarf","Choice Specs","Chople Berry","Claw Fossil","Clear Amulet","Clefablite","Clover Sweet","Coba Berry","Colbur Berry","Cornerstone Mask","Cornn Berry","Cover Fossil","Covert Cloak","Crabominite","Cracked Pot","Crucibellite","Custap Berry","Damp Rock","Dark Gem","Dark Memory","Darkinium Z","Darkranite","Dawn Stone","Decidium Z","Deep Sea Scale","Deep Sea Tooth","Delphoxite","Destiny Knot","Diancite","Dive Ball","Dome Fossil","Douse Drive","Draco Plate","Dragalgite","Dragon Fang","Dragon Gem","Dragon Memory","Dragon Scale","Dragoninite","Dragonium Z","Drampanite","Dread Plate","Dream Ball","Dubious Disc","Durin Berry","Dusk Ball","Dusk Stone","Earth Plate","Eelektrossite","Eevium Z","Eject Button","Eject Pack","Electirizer","Electric Gem","Electric Memory","Electric Seed","Electrium Z","Emboarite","Enigma Berry","Eviolite","Excadrite","Expert Belt","Fairium Z","Fairy Feather","Fairy Gem","Fairy Memory","Falinksite","Fast Ball","Feraligite","Fighting Gem","Fighting Memory","Fightinium Z","Figy Berry","Fire Gem","Fire Memory","Fire Stone","Firium Z","Fist Plate","Flame Orb","Flame Plate","Float Stone","Floettite","Flower Sweet","Flying Gem","Flying Memory","Flyinium Z","Focus Band","Focus Sash","Fossilized Bird","Fossilized Dino","Fossilized Drake","Fossilized Fish","Friend Ball","Froslassite","Full Incense","Galarica Cuff","Galarica Wreath","Galladite","Ganlon Berry","Garchompite","Garchompite Z","Gardevoirite","Gengarite","Ghost Gem","Ghost Memory","Ghostium Z","Glalitite","Glimmoranite","Gold Berry","Gold Bottle Cap","Golisopite","Golurkite","Grass Gem","Grass Memory","Grassium Z","Grassy Seed","Great Ball","Greninjite","Grepa Berry","Grip Claw","Griseous Core","Griseous Orb","Ground Gem","Ground Memory","Groundium Z","Gyaradosite","Haban Berry","Hard Stone","Hawluchanite","Heal Ball","Hearthflame Mask","Heat Rock","Heatranite","Heavy Ball","Heavy-Duty Boots","Helix Fossil","Heracronite","Hondew Berry","Houndoominite","Iapapa Berry","Ice Berry","Ice Gem","Ice Memory","Ice Stone","Icicle Plate","Icium Z","Icy Rock","Incinium Z","Insect Plate","Iron Ball","Iron Plate","Jaboca Berry","Jaw Fossil","Kangaskhanite","Kasib Berry","Kebia Berry","Kee Berry","Kelpsy Berry","King's Rock","Kommonium Z","Lagging Tail","Lansat Berry","Latiasite","Latiosite","Lax Incense","Leaf Stone","Leek","Leftovers","Leppa Berry","Level Ball","Liechi Berry","Life Orb","Light Ball","Light Clay","Loaded Dice","Lopunnite","Love Ball","Love Sweet","Lucarionite","Lucarionite Z","Lucky Punch","Lum Berry","Luminous Moss","Lunalium Z","Lure Ball","Lustrous Globe","Lustrous Orb","Luxury Ball","Lycanium Z","Macho Brace","Magearnite","Magmarizer","Magnet","Mago Berry","Magost Berry","Mail","Malamarite","Malicious Armor","Manectite","Maranga Berry","Marshadium Z","Master Ball","Masterpiece Teacup","Mawilite","Meadow Plate","Medichamite","Meganiumite","Mental Herb","Meowsticite","Metagrossite","Metal Alloy","Metal Coat","Metal Powder","Metronome","Mewnium Z","Mewtwonite X","Mewtwonite Y","Micle Berry","Mimikium Z","Mind Plate","Mint Berry","Miracle Berry","Miracle Seed","Mirror Herb","Misty Seed","Moon Ball","Moon Stone","Muscle Band","Mystery Berry","Mystic Water","Nanab Berry","Nest Ball","Net Ball","Never-Melt Ice","Nomel Berry","Normal Gem","Normalium Z","Occa Berry","Odd Incense","Old Amber","Oran Berry","Oval Stone","Pamtre Berry","Park Ball","Passho Berry","Payapa Berry","Pecha Berry","Persim Berry","Petaya Berry","Pidgeotite","Pikanium Z","Pikashunium Z","Pinap Berry","Pink Bow","Pinsirite","Pixie Plate","Plume Fossil","Poison Barb","Poison Gem","Poison Memory","Poisonium Z","Poke Ball","Polkadot Bow","Pomeg Berry","Power Anklet","Power Band","Power Belt","Power Bracer","Power Herb","Power Lens","Power Weight","Premier Ball","Pretty Feather","Primarium Z","Prism Scale","Protective Pads","Protector","PRZ Cure Berry","PSN Cure Berry","Psychic Gem","Psychic Memory","Psychic Seed","Psychium Z","Punching Glove","Pyroarite","Qualot Berry","Quick Ball","Quick Claw","Quick Powder","Rabuta Berry","Raichunite X","Raichunite Y","Rare Bone","Rawst Berry","Razor Claw","Razor Fang","Razz Berry","Reaper Cloth","Red Card","Red Orb","Repeat Ball","Ribbon Sweet","Rindo Berry","Ring Target","Rock Gem","Rock Incense","Rock Memory","Rockium Z","Rocky Helmet","Room Service","Root Fossil","Rose Incense","Roseli Berry","Rowap Berry","Rusted Shield","Rusted Sword","Sablenite","Sachet","Safari Ball","Safety Goggles","Sail Fossil","Salac Berry","Salamencite","Sceptilite","Scizorite","Scolipite","Scope Lens","Scovillainite","Scraftinite","Sea Incense","Sharp Beak","Sharpedonite","Shed Shell","Shell Bell","Shiny Stone","Shock Drive","Shuca Berry","Silk Scarf","Silver Powder","Sitrus Berry","Skarmorite","Skull Fossil","Sky Plate","Slowbronite","Smooth Rock","Snorlium Z","Snowball","Soft Sand","Solganium Z","Soul Dew","Spell Tag","Spelon Berry","Splash Plate","Spooky Plate","Sport Ball","Star Sweet","Staraptite","Starf Berry","Starminite","Steel Gem","Steel Memory","Steelium Z","Steelixite","Stick","Sticky Barb","Stone Plate","Strange Ball","Strawberry Sweet","Sun Stone","Swampertite","Sweet Apple","Syrupy Apple","Tamato Berry","Tanga Berry","Tapunium Z","Tart Apple","Tatsugirinite","Terrain Extender","Thick Club","Throat Spray","Thunder Stone","Timer Ball","Toxic Orb","Toxic Plate","TR00","TR01","TR02","TR03","TR04","TR05","TR06","TR07","TR08","TR09","TR10","TR11","TR12","TR13","TR14","TR15","TR16","TR17","TR18","TR19","TR20","TR21","TR22","TR23","TR24","TR25","TR26","TR27","TR28","TR29","TR30","TR31","TR32","TR33","TR34","TR35","TR36","TR37","TR38","TR39","TR40","TR41","TR42","TR43","TR44","TR45","TR46","TR47","TR48","TR49","TR50","TR51","TR52","TR53","TR54","TR55","TR56","TR57","TR58","TR59","TR60","TR61","TR62","TR63","TR64","TR65","TR66","TR67","TR68","TR69","TR70","TR71","TR72","TR73","TR74","TR75","TR76","TR77","TR78","TR79","TR80","TR81","TR82","TR83","TR84","TR85","TR86","TR87","TR88","TR89","TR90","TR91","TR92","TR93","TR94","TR95","TR96","TR97","TR98","TR99","Twisted Spoon","Tyranitarite","Ultra Ball","Ultranecrozium Z","Unremarkable Teacup","Up-Grade","Utility Umbrella","Venusaurite","Victreebelite","Vile Vial","Wacan Berry","Water Gem","Water Memory","Water Stone","Waterium Z","Watmel Berry","Wave Incense","Weakness Policy","Wellspring Mask","Wepear Berry","Whipped Dream","White Herb","Wide Lens","Wiki Berry","Wise Glasses","Yache Berry","Zap Plate","Zeraorite","Zoom Lens","Zygardite"],
@@ -404,7 +438,17 @@ async function doAuth(){
   }catch(e){ $('auErr').style.color='var(--loss)'; $('auErr').textContent=e.message; }
   $('auBtn').disabled=false;
 }
-async function logout(){ await sb.auth.signOut(); localStorage.clear(); me=null; recovering=false; route(); }
+async function logout(){
+  try { await sb.auth.signOut({scope:'global'}); } catch(e) { console.warn('signOut falló:', e); }
+  me=null; recovering=false; viewedUser=null; view='home';
+  try {
+    Object.keys(localStorage).forEach(k=>{ if(k.startsWith('sb-') || k.toLowerCase().includes('supabase')) localStorage.removeItem(k); });
+    Object.keys(sessionStorage).forEach(k=>{ if(k.startsWith('sb-') || k.toLowerCase().includes('supabase')) sessionStorage.removeItem(k); });
+  } catch(e) {}
+  try { closeModal(); } catch(e) {}
+  route();
+  setTimeout(()=>location.reload(), 80);
+}
 
 /* ---- recuperación de contraseña ---- */
 let recovering = false;
@@ -642,15 +686,15 @@ function monInfoBadges(name){
   </div>`;
 }
 function evBar(i, stat, label){
-  const val = teamDraft.pokemon[i].evs[stat]||0;
-  const total = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(teamDraft.pokemon[i].evs[k]||0),0);
-  const over = total>508;
-  const pct = Math.min(100, Math.round(val/252*100));
-  const full = val>=252;
+  const val = clampStatPoint(teamDraft.pokemon[i].evs[stat]||0);
+  const total = statTotal(teamDraft.pokemon[i].evs);
+  const over = total>STAT_BUDGET;
+  const pct = Math.min(100, Math.round(val/STAT_MAX*100));
+  const full = val>=STAT_MAX;
   return `<div class="ev-stat-row">
     <span class="ev-stat-label">${label}</span>
     <div class="ev-stat-bar-wrap"><div class="ev-stat-bar${full?' ev-full':''}" style="width:${pct}%"></div></div>
-    <input class="ev-stat-input" type="number" min="0" max="252" placeholder="0" value="${val||''}"
+    <input class="ev-stat-input" type="number" min="0" max="${STAT_MAX}" placeholder="0" value="${val||''}"
       oninput="setStat(${i},'evs','${stat}',this.value);debouncedEvRefresh(${i})">
   </div>`;
 }
@@ -663,8 +707,8 @@ function ivInput(i, stat, label){
   </div>`;
 }
 function monEditor(p, i){
-  const evTotal = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
-  const evOver = evTotal>508;
+  const evTotal = statTotal(p.evs);
+  const evOver = evTotal>STAT_BUDGET;
   return `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
     <span style="font-size:11px;color:var(--txt2)">Pokémon ${i+1} de ${teamDraft.pokemon.length}</span>
@@ -723,8 +767,7 @@ function monEditor(p, i){
       <div style="display:flex;gap:4px">
         <input class="ps-field" placeholder="Mote" value="${esc(p.nickname)}"
           oninput="setMon(${i},'nickname',this.value)" style="flex:1">
-        <input class="ps-field" placeholder="50" value="${esc(p.level)}"
-          oninput="setMon(${i},'level',this.value)" style="width:46px">
+        <input class="ps-field" placeholder="50" value="${BUILDER_LEVEL}" readonly disabled style="width:46px;opacity:.85">
       </div>
     </div>
   </div>
@@ -732,7 +775,7 @@ function monEditor(p, i){
   <div class="ps-section">
     <div class="ps-label">
       <span>EVs</span>
-      <span id="evtotal-${i}" class="ev-total-badge${evOver?' ev-over':' ev-ok'}">${evTotal}/508</span>
+      <span id="evtotal-${i}" class="ev-total-badge${evOver?' ev-over':' ev-ok'}">${evTotal}/${STAT_BUDGET}</span>
     </div>
     ${evBar(i,'hp','HP')}
     ${evBar(i,'atk','Atk')}
@@ -766,29 +809,29 @@ function debouncedEvRefresh(i){
   clearTimeout(_evRefreshT);
   _evRefreshT=setTimeout(()=>{
     const p=teamDraft.pokemon[i]; if(!p) return;
-    const total=['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
-    const over=total>508;
+    const total=statTotal(p.evs);
+    const over=total>STAT_BUDGET;
     const badge=document.getElementById('evtotal-'+i);
-    if(badge){badge.textContent=total+'/508';badge.className='ev-total-badge '+(over?'ev-over':'ev-ok');}
+    if(badge){badge.textContent=total+'/'+STAT_BUDGET;badge.className='ev-total-badge '+(over?'ev-over':'ev-ok');}
     document.querySelectorAll('.ev-stat-row').forEach(row=>{
       const inp=row.querySelector('.ev-stat-input');
       const bar=row.querySelector('.ev-stat-bar');
       if(!inp||!bar) return;
       const v=parseInt(inp.value)||0;
-      bar.style.width=Math.min(100,Math.round(v/252*100))+'%';
-      bar.classList.toggle('ev-full',v>=252);
+      bar.style.width=Math.min(100,Math.round(v/STAT_MAX*100))+'%';
+      bar.classList.toggle('ev-full',v>=STAT_MAX);
     });
   },80);
 }
 function updateEvBars(i){
   const p = teamDraft.pokemon[i];
   if(!p) return;
-  const total = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
-  const over = total>508;
+  const total = statTotal(p.evs);
+  const over = total>STAT_BUDGET;
   const badge = document.getElementById('evtotal-'+i);
-  if(badge){ badge.textContent=total+'/508'; badge.className='ev-total-badge '+(over?'ev-over':'ev-ok'); }
+  if(badge){ badge.textContent=total+'/'+STAT_BUDGET; badge.className='ev-total-badge '+(over?'ev-over':'ev-ok'); }
   ['hp','atk','def','spa','spd','spe'].forEach(stat=>{
-    const val=p.evs[stat]||0, pct=Math.min(100,Math.round(val/252*100));
+    const val=p.evs[stat]||0, pct=Math.min(100,Math.round(val/STAT_MAX*100));
     const bars=document.querySelectorAll(`.ev-stat-bar`);
     // find by checking parent ev-stat-row label
     const rows=document.querySelectorAll('.ev-stat-row');
@@ -796,12 +839,13 @@ function updateEvBars(i){
       const inp=row.querySelector('.ev-stat-input');
       if(inp && inp.oninput && inp.oninput.toString().includes("'"+stat+"'")){
         const bar=row.querySelector('.ev-stat-bar');
-        if(bar){ bar.style.width=pct+'%'; bar.classList.toggle('ev-full',val>=252); }
+        if(bar){ bar.style.width=pct+'%'; bar.classList.toggle('ev-full',val>=STAT_MAX); }
       }
     });
   });
 }
 function setMon(i,k,v){
+  if(k==='level') v=BUILDER_LEVEL;
   teamDraft.pokemon[i][k]=v;
   if(k==='name'){
     // si la especie tiene una sola habilidad y aún no se eligió, sugerirla
@@ -817,7 +861,18 @@ function scheduleMonRefresh(i){
   monRefreshT=setTimeout(()=>{ if(teamTab==='editor'){ const act=document.activeElement; const isMonInput=act&&act.dataset&&act.dataset.ac==='mon'; if(!isMonInput) renderTeamModal(); } },400);
 }
 function setMove(i,m,v){ teamDraft.pokemon[i].moves[m]=v; }
-function setStat(i,grp,k,v){ const n=parseInt(v,10); if(v===''||isNaN(n)) delete teamDraft.pokemon[i][grp][k]; else teamDraft.pokemon[i][grp][k]=n; }
+function setStat(i,grp,k,v){
+  const mon=teamDraft.pokemon[i]; if(!mon) return;
+  if(!mon[grp]) mon[grp]={};
+  const n=parseInt(v,10);
+  if(v===''||isNaN(n)){ delete mon[grp][k]; return; }
+  if(grp==='evs'){
+    const others=STAT_KEYS_BUILD.filter(x=>x!==k).reduce((s,x)=>s+(parseInt(mon.evs[x],10)||0),0);
+    mon.evs[k]=Math.max(0, Math.min(STAT_MAX, STAT_BUDGET-others, n));
+  } else {
+    mon[grp][k]=n;
+  }
+}
 function addMon(){ teamDraft.pokemon.push(blankMon()); renderTeamModal(); }
 function rmMon(i){ teamDraft.pokemon.splice(i,1); renderTeamModal(); }
 
@@ -834,7 +889,7 @@ async function saveTeam(){
     const pubBox=$('tPub'); if(pubBox) teamDraft.is_public=pubBox.checked;
     // limpiar moves vacíos y pokémon sin nombre
     const pokemon=(teamDraft.pokemon||[])
-      .map(p=>({...p,moves:(p.moves||[]).filter(Boolean)}))
+      .map(p=>normalizeMonBuild({...p,moves:(p.moves||[]).filter(Boolean)}))
       .filter(p=>(p.name||'').trim());
     const payload={name,pokemon,is_public:teamDraft.is_public,owner:me.id};
     $('tErr').style.color='var(--txt2)'; $('tErr').textContent='Guardando…';
@@ -851,8 +906,8 @@ async function saveTeam(){
 }
 /* ── Parser completo formato Pokémon Showdown ── */
 const STAT_KEYS=['hp','atk','def','spa','spd','spe'];
-function blankMon(){ return {name:'',nickname:'',gender:'',item:'',ability:'',level:'',shiny:false,
-  teraType:'',nature:'',evs:{},ivs:{},moves:[]}; }
+function blankMon(){ return {name:'',nickname:'',gender:'',item:'',ability:'',level:BUILDER_LEVEL,shiny:false,
+  teraType:'',nature:'',evs:{},moves:[]}; }
 function parsePaste(txt){
   const blocks=txt.split(/\n\s*\n/).map(b=>b.replace(/\r/g,'').trim()).filter(Boolean);
   const mons=[];
@@ -873,13 +928,16 @@ function parsePaste(txt){
       if(line.startsWith('- ')){ p.moves.push(line.slice(2).trim()); return; }
       const [k,...rest]=line.split(':'); const key=k.trim().toLowerCase(); const val=rest.join(':').trim();
       if(key==='ability') p.ability=val;
-      else if(key==='level') p.level=val;
+      else if(key==='level') p.level=BUILDER_LEVEL;
       else if(key==='shiny') p.shiny=/yes/i.test(val);
       else if(key==='tera type') p.teraType=val;
       else if(/nature$/i.test(line)){ p.nature=line.replace(/nature/i,'').trim(); }
       else if(key==='evs') parseStats(val,p.evs);
-      else if(key==='ivs') parseStats(val,p.ivs);
+      else if(key==='ivs') { /* IVs ocultos/deshabilitados en este builder */ }
     });
+    p.level=BUILDER_LEVEL;
+    p.evs=normalizeStatPoints(p.evs);
+    delete p.ivs;
     if(p.name) mons.push(p);
   });
   return mons.slice(0,6);
@@ -899,12 +957,11 @@ function exportShowdown(mons){
     if(p.item) head+=` @ ${p.item}`;
     const L=[head];
     if(p.ability) L.push(`Ability: ${p.ability}`);
-    if(p.level&&p.level!=='100'&&p.level!=='') L.push(`Level: ${p.level}`);
+    L.push(`Level: ${BUILDER_LEVEL}`);
     if(p.shiny) L.push(`Shiny: Yes`);
     if(p.teraType) L.push(`Tera Type: ${p.teraType}`);
     const ev=fmtStats(p.evs); if(ev) L.push(`EVs: ${ev}`);
     if(p.nature) L.push(`${p.nature} Nature`);
-    const iv=fmtStats(p.ivs,true); if(iv) L.push(`IVs: ${iv}`);
     (p.moves||[]).filter(Boolean).forEach(m=>L.push(`- ${m}`));
     return L.join('\n');
   }).join('\n\n');
