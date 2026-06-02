@@ -1188,3 +1188,113 @@ body::before {
 .stat-final { font-family: monospace; font-size: 11px; color: var(--text-muted); text-align: right; font-weight: bold; min-width: 34px; }
 .stat-plus { color: #ff9944 !important; }
 .stat-minus { color: #6699ff !important; }
+
+/* ─── SHOWDOWN-STYLE EDITOR ─── */
+.sd-editor {
+  display: grid;
+  grid-template-columns: 96px 1fr 220px;
+  gap: 0;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+/* LEFT col */
+.sd-sprite-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 8px;
+  background: var(--bg-void);
+  border-right: 1px solid var(--border);
+  gap: 6px;
+}
+.sd-sprite-wrap { width: 80px; height: 80px; display:flex; align-items:center; justify-content:center; }
+.sd-sprite { width: 80px; height: 80px; image-rendering: pixelated; }
+.sd-sprite-placeholder { width:80px;height:80px;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--text-muted); }
+.sd-shiny-label { display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text-muted);cursor:pointer; }
+.sd-gender-select { background:var(--bg-card);border:1px solid var(--border);color:var(--text-primary);font-size:13px;padding:2px 4px;border-radius:4px;width:100%;text-align:center; }
+.btn-xs { font-size:10px;padding:3px 8px; }
+
+/* CENTER col */
+.sd-center-col { padding: 10px 12px; display:flex; flex-direction:column; gap:8px; }
+.sd-row { display:flex; gap:8px; }
+.sd-field { display:flex; flex-direction:column; gap:3px; flex:1; min-width:0; }
+.sd-field-wide { flex:2; }
+.sd-field label { font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.5px; font-family:'Share Tech Mono',monospace; }
+.sd-input {
+  background: var(--bg-input, var(--bg-card));
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 5px 8px;
+  outline: none;
+  transition: border-color .15s;
+  width: 100%;
+}
+.sd-input:focus { border-color: var(--red); }
+.sd-input[readonly] { opacity:.45; cursor:not-allowed; }
+.sd-moves { display:flex; flex-direction:column; gap:4px; margin-top:4px; }
+.sd-move-row { display:flex; align-items:center; gap:6px; }
+.sd-move-num { font-size:10px; color:var(--text-muted); font-family:monospace; width:12px; flex-shrink:0; }
+.sd-move-input { font-size:13px; }
+
+/* RIGHT col — stats */
+.sd-stats-col {
+  padding: 10px 12px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-void);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.sd-stats-header {
+  display: grid;
+  grid-template-columns: 38px 36px 1fr;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin-bottom: 4px;
+  font-family: 'Share Tech Mono', monospace;
+}
+.sd-stat-row {
+  display: grid;
+  grid-template-columns: 38px 36px 34px;
+  grid-template-rows: auto 6px;
+  gap: 2px 4px;
+  align-items: center;
+}
+.sd-stat-name { font-size:11px; font-weight:700; color:var(--text-secondary); font-family:'Rajdhani',sans-serif; }
+.sd-ev-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-family: monospace;
+  padding: 2px 3px;
+  width: 100%;
+  text-align: center;
+  outline: none;
+}
+.sd-ev-input:focus { border-color: var(--red); }
+.sd-stat-val { font-size:12px; font-weight:700; color:var(--text-primary); font-family:'Share Tech Mono',monospace; text-align:right; }
+.sd-ev-bar {
+  grid-column: span 3;
+  height: 5px;
+  background: var(--bg-hover, #222);
+  border-radius: 3px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.sd-ev-fill { height:100%; background:var(--red); border-radius:3px; transition:width .1s; }
+.sd-ev-fill.maxed { background: var(--gold); }
+.sd-ev-presets { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
+.sd-ev-presets .btn { font-size:10px; padding:2px 6px; }
