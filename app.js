@@ -877,28 +877,18 @@ window.updateEV = (stat, value) => {
   p.evs[stat] = Math.min(newVal, EV_TOTAL_MAX - otherTotal);
   const total = Object.values(p.evs).reduce((a,b)=>a+b,0);
   // Update total display
-  // Update total display
   const totalEl = document.querySelector('.ev-total');
   if (totalEl) {
     totalEl.textContent = `${total}/${EV_TOTAL_MAX}`;
     totalEl.className = `ev-total ${total>EV_TOTAL_MAX?'over':'ok'}`;
   }
-  // Sync slider + update track color
-  const slider = document.querySelector(`.sd-ev-slider[data-ev-stat="${stat}"]`);
-  if (slider) {
-    if (parseInt(slider.value) !== p.evs[stat]) slider.value = p.evs[stat];
-    const pct = (p.evs[stat] / EV_STAT_MAX) * 100;
-    const color = p.evs[stat] >= EV_STAT_MAX ? 'var(--gold)' : 'var(--red)';
-    slider.style.background = `linear-gradient(to right, ${color} ${pct}%, var(--bg-hover, #333) ${pct}%)`;
-  }
   // Update stat value display
   const nm = getNatureMods(p.nature);
   const statEl = document.querySelector(`[data-stat="${stat}"]`);
-  if (statEl && p.baseStats) { statEl.textContent = calcStat(p.baseStats[stat], p.evs[stat], stat==='HP', nm[stat]); }
-  // Sync slider position and color
+  if (statEl && p.baseStats) statEl.textContent = calcStat(p.baseStats[stat], p.evs[stat], stat==='HP', nm[stat]);
+  // Sync slider + number input
   const slider = document.querySelector(`.sd-ev-slider[data-ev-stat="${stat}"]`);
   if (slider) { slider.value = p.evs[stat]; syncSlider(slider); }
-  // Fix input if capped
   const evInput = document.querySelector(`[data-ev-stat="${stat}"]`)?.closest('.sd-stat-row2')?.querySelector('.sd-ev-n');
   if (evInput && parseInt(evInput.value) !== p.evs[stat]) evInput.value = p.evs[stat];
 };
@@ -1001,7 +991,22 @@ function escHtml(str) {
 async function init() {
   createACDropdown();
   getAllPokemonList();
-  // Learnsets already loading via top-level fetch
+
+  // ── Attach all event listeners (no inline onclick needed) ──
+  document.getElementById('btn-new-team')?.addEventListener('click', handleNewTeam);
+  document.getElementById('btn-auth-submit')?.addEventListener('click', handleAuthSubmit);
+  document.getElementById('btn-do-import')?.addEventListener('click', doImport);
+  document.getElementById('btn-close-import')?.addEventListener('click', closeImportModal);
+  document.getElementById('btn-copy-export')?.addEventListener('click', copyExportModal);
+  document.getElementById('btn-close-export')?.addEventListener('click', closeExportModal);
+  document.getElementById('tab-login')?.addEventListener('click', () => handleAuthTabSwitch('login'));
+  document.getElementById('tab-signup')?.addEventListener('click', () => handleAuthTabSwitch('signup'));
+
+  // Close modals when clicking backdrop
+  document.getElementById('import-modal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeImportModal(); });
+  document.getElementById('export-modal')?.addEventListener('click', e => { if (e.target === e.currentTarget) closeExportModal(); });
+
+  document.getElementById('auth-password')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
 
   supabase.auth.onAuthStateChange(async (event, session) => {
     console.log('[Auth] event:', event);
@@ -1024,8 +1029,6 @@ async function init() {
       renderAll();
     }
   });
-
-  document.getElementById('auth-password')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
 
   document.addEventListener('click', e => {
     const dd = document.getElementById('ac-dropdown');
