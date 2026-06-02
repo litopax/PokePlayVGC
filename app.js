@@ -175,26 +175,108 @@ function parseLearnsetBlock(raw, key) {
 }
 
 // Get all moves for a pokemon + its pre-evolutions, filtered to Gen 9
+// ─── WIKIDEX API ─────────────────────────────────────────────
+// WikiDex has a dedicated "Pokémon Champions" moves section per Pokémon.
+// Their MediaWiki API supports CORS via origin=* from the browser.
+
+const WIKIDEX_MOVE_CACHE = {};
+
+// Convert display name to WikiDex page slug
+function toWikiDexSlug(name) {
+  // Handle special forms: "Hisuian Sneasel" -> "Sneasel de Hisui", etc.
+  const REGIONAL_MAP = {
+    'hisuian': 'de Hisui', 'alolan': 'de Alola', 'galarian': 'de Galar',
+    'paldean': 'de Paldea', 'mega': 'Mega'
+  };
+  let slug = name;
+  for (const [en, es] of Object.entries(REGIONAL_MAP)) {
+    if (name.toLowerCase().startsWith(en + ' ')) {
+      const baseName = name.slice(en.length + 1);
+      slug = en === 'mega' ? `${baseName} Mega` : `${baseName} ${es}`;
+      break;
+    }
+  }
+  return encodeURIComponent(slug);
+}
+
+async function fetchWikiDexMoves(pokemonName) {
+  if (!pokemonName) return null;
+  const cacheKey = pokemonName.toLowerCase();
+  if (WIKIDEX_MOVE_CACHE[cacheKey]) return WIKIDEX_MOVE_CACHE[cacheKey];
+
+  const slug = toWikiDexSlug(pokemonName);
+  const url = `https://www.wikidex.net/api.php?action=parse&page=${slug}&prop=wikitext&format=json&origin=*`;
+
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const data = await res.json();
+    const wikitext = data?.parse?.wikitext?.['*'];
+    if (!wikitext) return null;
+
+    // Find the Champions section
+    const champIdx = wikitext.indexOf('=== Pokémon Champions ===');
+    if (champIdx === -1) return null;
+
+    // Extract until next section (===)
+    const after = wikitext.slice(champIdx + 25);
+    const nextSection = after.search(/
+={2,3}[^=]/);
+    const section = nextSection >= 0 ? after.slice(0, nextSection) : after.slice(0, 3000);
+
+    // Parse move names from wikitext table rows
+    // WikiDex format: | [[Movimiento|Nombre]] or just [[Nombre]]
+    const moves = new Set();
+    const linkRe = /\[\[(?:[^\]|]+\|)?([^\]]+)\]\]/g;
+    let m;
+    while ((m = linkRe.exec(section)) !== null) {
+      const candidate = m[1].trim();
+      // Filter out non-move links (types, categories, short strings, numbers)
+      if (candidate.length > 2 && !/^\d+$/.test(candidate) &&
+          !['Físico','Especial','Estado','—','Sí','No','Normal'].includes(candidate)) {
+        moves.add(candidate);
+      }
+    }
+
+    // Also parse plain text move names from table cells
+    const cellRe = /\|\s*([A-ZÁÉÍÓÚÑÜ][a-záéíóúñü\s]+(?:[A-Z][a-z]+)?)\s*
+/g;
+    while ((m = cellRe.exec(section)) !== null) {
+      const candidate = m[1].trim();
+      if (candidate.length > 3 && candidate.split(' ').length <= 4) {
+        moves.add(candidate);
+      }
+    }
+
+    const result = Array.from(moves).sort();
+    if (result.length > 0) {
+      WIKIDEX_MOVE_CACHE[cacheKey] = result;
+      return result;
+    }
+    return null;
+  } catch(e) {
+    console.warn('[PKM] WikiDex fetch failed:', e);
+    return null;
+  }
+}
+
 async function fetchShowdownMoves(pokeApiData) {
   const raw = await getShowdownLearnsetRaw();
   if (!raw) return null;
 
   const chain = [];
-  // Walk evolution chain from PokéAPI to get pre-evolutions
   try {
     const speciesRes = await fetch(pokeApiData.speciesUrl);
     const speciesData = await speciesRes.json();
     const chainRes = await fetch(speciesData.evolution_chain.url);
     const chainData = await chainRes.json();
-    // Flatten chain
     function walk(node) {
       chain.push(node.species.name);
       node.evolves_to.forEach(walk);
     }
     walk(chainData.chain);
-  } catch { /* skip chain, use only current */ }
+  } catch { /* skip chain */ }
 
-  // Find current pokemon position and take it + all pre-evolutions
   const currentIdx = chain.indexOf(pokeApiData.speciesName);
   const relevant = currentIdx >= 0 ? chain.slice(0, currentIdx + 1) : [pokeApiData.speciesName];
 
@@ -203,15 +285,11 @@ async function fetchShowdownMoves(pokeApiData) {
     const key = showdownKey(specName);
     const learnset = parseLearnsetBlock(raw, key);
     if (!learnset) continue;
-    // Filter to gen 9 (keys starting with "9")
     for (const [move, codes] of Object.entries(learnset)) {
-      if (codes.some(c => c.startsWith('9'))) {
-        allMoves.add(move);
-      }
+      if (codes.some(c => c.startsWith('9'))) allMoves.add(move);
     }
   }
 
-  // Convert to display names using Showdown's own name map
   return Array.from(allMoves)
     .map(key => MOVE_NAMES[key] || key.replace(/^./, c => c.toUpperCase()))
     .sort();
@@ -249,10 +327,17 @@ async function fetchPokemonData(name) {
     result.legalMoves = data.moves.map(m => m.move.name.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()));
     POKEMON_CACHE[key] = result;
 
-    // Await Showdown learnset — this is the accurate source
+    // Try WikiDex Champions moves first (most accurate for this game),
+    // then fall back to Showdown learnset
     try {
-      const showdownMoves = await fetchShowdownMoves(result);
-      if (showdownMoves && showdownMoves.length > 0) {
+      const [wikiMoves, showdownMoves] = await Promise.all([
+        fetchWikiDexMoves(name),
+        fetchShowdownMoves(result)
+      ]);
+      // WikiDex Champions section is the ground truth — prefer it
+      if (wikiMoves && wikiMoves.length > 0) {
+        result.legalMoves = wikiMoves;
+      } else if (showdownMoves && showdownMoves.length > 0) {
         result.legalMoves = showdownMoves;
       }
     } catch { /* keep PokéAPI fallback */ }
