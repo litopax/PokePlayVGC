@@ -1356,3 +1356,239 @@ body::before {
   font-family: 'Share Tech Mono', monospace;
   font-size: 11px;
 }
+
+/* ─── SD EDITOR v2: two-column, stats inline ─── */
+.sd-editor {
+  display: grid !important;
+  grid-template-columns: 100px 1fr !important;
+}
+
+.sd-main-col {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+/* Fields row: 5 equal columns */
+.sd-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+/* Lower row: moves left, stats right */
+.sd-lower-row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.sd-moves-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Stats block */
+.sd-stats-col2 {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sd-stat-hdr {
+  display: grid;
+  grid-template-columns: 36px 32px 1fr 32px 40px;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-family: 'Share Tech Mono', monospace;
+  padding-bottom: 3px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.sd-stat-row2 {
+  display: grid;
+  grid-template-columns: 36px 32px 1fr 32px 40px;
+  gap: 4px;
+  align-items: center;
+  height: 24px;
+}
+
+/* stat name */
+.sn {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* base stat */
+.sb {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'Share Tech Mono', monospace;
+  text-align: right;
+}
+
+/* bar */
+.sd-bar {
+  height: 8px;
+  background: var(--bg-hover, #222);
+  border-radius: 4px;
+  cursor: pointer;
+  overflow: hidden;
+}
+.sd-bar-fill {
+  height: 100%;
+  background: var(--red);
+  border-radius: 4px;
+  transition: width .1s;
+}
+.sd-bar-fill.maxed { background: var(--gold); }
+
+/* ev number input */
+.sd-ev-n {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-family: monospace;
+  padding: 1px 2px;
+  width: 100%;
+  text-align: center;
+  outline: none;
+}
+.sd-ev-n:focus { border-color: var(--red); }
+
+/* stat total */
+.sv {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Share Tech Mono', monospace;
+  text-align: right;
+}
+
+.stat-plus { color: #ff9944 !important; }
+.stat-minus { color: #6699ff !important; }
+
+.sd-stat-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid var(--border);
+}
+
+/* ─── SHOWDOWN STAT BARS + SLIDERS ─── */
+.sd-stat-hdr {
+  display: grid;
+  grid-template-columns: 36px 28px 1fr 28px 80px 36px;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-family: 'Share Tech Mono', monospace;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 3px;
+  align-items: center;
+}
+.sd-hdr-bar { text-align: center; }
+
+.sd-stat-row2 {
+  display: grid;
+  grid-template-columns: 36px 28px 1fr 28px 80px 36px;
+  gap: 4px;
+  align-items: center;
+  height: 22px;
+}
+
+/* Base stat colored bar (like Showdown) */
+.sd-base-bar-wrap {
+  height: 8px;
+  background: var(--bg-hover, #1a1a1a);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.sd-base-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width .2s;
+}
+
+/* EV number input */
+.sd-ev-n {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-family: monospace;
+  padding: 1px 2px;
+  width: 100%;
+  text-align: center;
+  outline: none;
+}
+.sd-ev-n:focus { border-color: var(--red); }
+
+/* EV slider — styled like Showdown */
+.sd-ev-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(to right,
+    var(--sl-color, var(--red)) var(--sl-pct, 0%),
+    var(--bg-hover, #333) var(--sl-pct, 0%));
+}
+.sd-ev-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 2px solid var(--bg-card);
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.sd-ev-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  border: 2px solid var(--bg-card);
+  cursor: pointer;
+}
+
+/* Stat total value */
+.sv {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Share Tech Mono', monospace;
+  text-align: right;
+}
+
+.sd-stat-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+}
+
+/* Override old ev-row styles that might conflict */
+.sd-stats-col2 .ev-row { display: none; }
