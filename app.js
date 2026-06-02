@@ -715,14 +715,66 @@ window.handlePokemonNameChange = async (name) => {
   const team = getActiveTeam(); if (!team || state.activeSlotIdx === null) return;
   const p = team.pokemon[state.activeSlotIdx];
   p.name = name;
+
   const data = await fetchPokemonData(name);
   if (data) {
-    p.types = data.types; p.sprite = data.sprite; p.shinySprite = data.shinySprite;
-    p.abilities = data.abilities; p.legalMoves = data.legalMoves; p.baseStats = data.baseStats;
-    // Don't auto-fill ability — let user choose
+    p.types = data.types;
+    p.sprite = data.sprite;
+    p.shinySprite = data.shinySprite;
+    p.abilities = data.abilities;
+    p.legalMoves = data.legalMoves;
+    p.baseStats = data.baseStats;
   }
-  renderContent();
+
+  // ── Targeted DOM updates — no full re-render ──────────────────
+
+  // 1. Update sprite in editor
+  const editorSprite = document.querySelector('.editor-sprite');
+  if (editorSprite && p.sprite) editorSprite.src = p.shiny && p.shinySprite ? p.shinySprite : p.sprite;
+  else if (!editorSprite && p.sprite) {
+    const zone = document.querySelector('.editor-sprite-zone');
+    if (zone) zone.innerHTML = `<img class="editor-sprite" src="${p.sprite}" alt="${p.name}">
+      <label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;font-size:12px;color:var(--text-muted);justify-content:center">
+        <input type="checkbox" ${p.shiny?'checked':''} onchange="handleShinyToggle(this.checked)"> <span class="shiny-star">✦</span> Shiny
+      </label>`;
+  }
+
+  // 2. Update ability field — re-setup AC with new abilities list
+  const abilityEl = document.getElementById('ac-ability');
+  if (abilityEl) {
+    abilityEl.readOnly = !p.abilities.length;
+    abilityEl.placeholder = p.abilities.length ? 'Seleccionar' : 'Elige un Pokémon primero';
+    if (p.abilities.length) setupAbilityAC(abilityEl, p.abilities);
+  }
+
+  // 3. Update move ACs with new legalMoves
+  p.moves.forEach((_, i) => {
+    const moveEl = document.getElementById(`ac-move-${i}`);
+    if (moveEl) setupMoveAC(moveEl, i, p.legalMoves);
+  });
+
+  // 4. Update stats display
+  updateStatColors();
+
+  // 5. Update the grid slot
+  updateGridSlot(state.activeSlotIdx);
 };
+
+// Update a single slot in the grid without touching the editor
+function updateGridSlot(idx) {
+  const grid = document.getElementById('pokemon-grid');
+  if (!grid) return;
+  const team = getActiveTeam(); if (!team) return;
+  const slots = grid.querySelectorAll('.pokemon-slot');
+  if (!slots[idx]) return;
+  const p = team.pokemon[idx];
+  const newSlot = document.createElement('div');
+  newSlot.innerHTML = (p && p.name) ? renderFilledSlot(p, idx) : `
+    <div class="pokemon-slot empty" onclick="handleAddPokemon(${idx})">
+      <div class="empty-icon">➕</div><span>Agregar Pokémon</span>
+    </div>`;
+  slots[idx].replaceWith(newSlot.firstElementChild);
+}
 
 // Silent update — doesn't trigger full re-render (for text inputs being typed)
 window.updatePokemonFieldSilent = (field, value) => {
