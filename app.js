@@ -665,11 +665,13 @@ window.handleSlotClick = (idx) => {
   renderContent();
 };
 window.handleAddPokemon = (idx) => {
-  const team = getActiveTeam(); if (!team) return;
-  // Fill any gaps with empty pokemon objects (not null) so getActivePokemon works
+  console.log("[PKM] handleAddPokemon idx=", idx, "team=", state.activeTeamId);
+  const team = getActiveTeam();
+  if (!team) { console.error("[PKM] No active team"); return; }
   while (team.pokemon.length <= idx) team.pokemon.push(makePokemon());
-  if (!team.pokemon[idx]) team.pokemon[idx] = makePokemon();
-  state.activeSlotIdx = idx; renderContent();
+  if (!team.pokemon[idx] || !team.pokemon[idx].moves) team.pokemon[idx] = makePokemon();
+  state.activeSlotIdx = idx;
+  renderContent();
 };
 window.handleRemovePokemon = (idx, e) => {
   e?.stopPropagation();
