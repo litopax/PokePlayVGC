@@ -651,7 +651,7 @@ function editorPane(){
       </div>
       <div class="ps-main" style="display:flex;align-items:center;justify-content:center;color:var(--txt2);font-size:13px;flex-direction:column;gap:12px">
         <div style="font-size:36px;opacity:0.2">⊕</div>
-        <div>Hacé clic en <b>＋</b> para agregar tu primer Pokémon</div>
+        <button class="btn" onclick="addMon()" style="margin-top:4px;font-size:15px;padding:10px 28px">＋ Agregar Pokémon</button>
       </div>
     </div>`;
   }
@@ -687,13 +687,13 @@ function monInfoBadges(name){
 function evBar(i, stat, label){
   const val = teamDraft.pokemon[i].evs[stat]||0;
   const total = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(teamDraft.pokemon[i].evs[k]||0),0);
-  const over = total>508;
-  const pct = Math.min(100, Math.round(val/252*100));
-  const full = val>=252;
+  const over = total>66;
+  const pct = Math.min(100, Math.round(val/32*100));
+  const full = val>=32;
   return `<div class="ev-stat-row">
     <span class="ev-stat-label">${label}</span>
     <div class="ev-stat-bar-wrap"><div class="ev-stat-bar${full?' ev-full':''}" style="width:${pct}%"></div></div>
-    <input class="ev-stat-input" type="number" min="0" max="252" placeholder="0" value="${val||''}"
+    <input class="ev-stat-input" type="number" min="0" max="32" placeholder="0" value="${val||''}"
       oninput="setStat(${i},'evs','${stat}',this.value);debouncedEvRefresh(${i})">
   </div>`;
 }
@@ -762,20 +762,16 @@ function monEditor(p, i){
       </select>
     </div>
     <div>
-      <div class="ps-label">Mote / Nivel</div>
-      <div style="display:flex;gap:4px">
-        <input class="ps-field" placeholder="Mote" value="${esc(p.nickname)}"
-          oninput="setMon(${i},'nickname',this.value)" style="flex:1">
-        <input class="ps-field" placeholder="50" value="${esc(p.level)}"
-          oninput="setMon(${i},'level',this.value)" style="width:46px">
-      </div>
+      <div class="ps-label">Mote</div>
+      <input class="ps-field" placeholder="Mote (opcional)" value="${esc(p.nickname)}"
+        oninput="setMon(${i},'nickname',this.value)">
     </div>
   </div>
 
   <div class="ps-section">
     <div class="ps-label">
       <span>EVs</span>
-      <span id="evtotal-${i}" class="ev-total-badge${evOver?' ev-over':' ev-ok'}">${evTotal}/508</span>
+      <span id="evtotal-${i}" class="ev-total-badge${evOver?' ev-over':' ev-ok'}">${evTotal}/66</span>
     </div>
     ${evBar(i,'hp','HP')}
     ${evBar(i,'atk','Atk')}
@@ -785,13 +781,6 @@ function monEditor(p, i){
     ${evBar(i,'spe','Spe')}
   </div>
 
-  <div class="ps-section">
-    <div class="ps-label">IVs <span style="font-weight:400;text-transform:none">(vacío = 31)</span></div>
-    <div class="ps-row" style="grid-template-columns:repeat(6,1fr);gap:4px">
-      ${ivInput(i,'hp','HP')}${ivInput(i,'atk','Atk')}${ivInput(i,'def','Def')}
-      ${ivInput(i,'spa','SpA')}${ivInput(i,'spd','SpD')}${ivInput(i,'spe','Spe')}
-    </div>
-  </div>
 
   <div class="ps-section">
     <div class="ps-label">Movimientos</div>
@@ -810,15 +799,15 @@ function debouncedEvRefresh(i){
   _evRefreshT=setTimeout(()=>{
     const p=teamDraft.pokemon[i]; if(!p) return;
     const total=['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
-    const over=total>508;
+    const over=total>66;
     const badge=document.getElementById('evtotal-'+i);
-    if(badge){badge.textContent=total+'/508';badge.className='ev-total-badge '+(over?'ev-over':'ev-ok');}
+    if(badge){badge.textContent=total+'/66';badge.className='ev-total-badge '+(over?'ev-over':'ev-ok');}
     document.querySelectorAll('.ev-stat-row').forEach(row=>{
       const inp=row.querySelector('.ev-stat-input');
       const bar=row.querySelector('.ev-stat-bar');
       if(!inp||!bar) return;
       const v=parseInt(inp.value)||0;
-      bar.style.width=Math.min(100,Math.round(v/252*100))+'%';
+      bar.style.width=Math.min(100,Math.round(v/32*100))+'%';
       bar.classList.toggle('ev-full',v>=252);
     });
   },80);
@@ -827,11 +816,11 @@ function updateEvBars(i){
   const p = teamDraft.pokemon[i];
   if(!p) return;
   const total = ['hp','atk','def','spa','spd','spe'].reduce((s,k)=>s+(p.evs[k]||0),0);
-  const over = total>508;
+  const over = total>66;
   const badge = document.getElementById('evtotal-'+i);
-  if(badge){ badge.textContent=total+'/508'; badge.className='ev-total-badge '+(over?'ev-over':'ev-ok'); }
+  if(badge){ badge.textContent=total+'/66'; badge.className='ev-total-badge '+(over?'ev-over':'ev-ok'); }
   ['hp','atk','def','spa','spd','spe'].forEach(stat=>{
-    const val=p.evs[stat]||0, pct=Math.min(100,Math.round(val/252*100));
+    const val=p.evs[stat]||0, pct=Math.min(100,Math.round(val/32*100));
     const bars=document.querySelectorAll(`.ev-stat-bar`);
     // find by checking parent ev-stat-row label
     const rows=document.querySelectorAll('.ev-stat-row');
@@ -860,8 +849,18 @@ function scheduleMonRefresh(i){
   monRefreshT=setTimeout(()=>{ if(teamTab==='editor'){ const act=document.activeElement; const isMonInput=act&&act.dataset&&act.dataset.ac==='mon'; if(!isMonInput) renderTeamModal(); } },400);
 }
 function setMove(i,m,v){ teamDraft.pokemon[i].moves[m]=v; }
-function setStat(i,grp,k,v){ const n=parseInt(v,10); if(v===''||isNaN(n)) delete teamDraft.pokemon[i][grp][k]; else teamDraft.pokemon[i][grp][k]=n; }
-function addMon(){ teamDraft.pokemon.push(blankMon()); renderTeamModal(); }
+function setStat(i,grp,k,v){
+  const n=parseInt(v,10);
+  if(v===''||isNaN(n)){ delete teamDraft.pokemon[i][grp][k]; return; }
+  if(grp==='evs'){
+    const clamped=Math.max(0,Math.min(32,n));
+    const others=['hp','atk','def','spa','spd','spe'].filter(s=>s!==k).reduce((s,s2)=>s+(teamDraft.pokemon[i].evs[s2]||0),0);
+    teamDraft.pokemon[i].evs[k]=Math.min(clamped, 66-others);
+  } else {
+    teamDraft.pokemon[i][grp][k]=n;
+  }
+}
+function addMon(){ teamDraft.pokemon.push(blankMon()); window._psTab=teamDraft.pokemon.length-1; renderTeamModal(); }
 function rmMon(i){ teamDraft.pokemon.splice(i,1); renderTeamModal(); }
 
 async function saveTeam(){
