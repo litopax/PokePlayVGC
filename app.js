@@ -620,11 +620,12 @@ function renderEditor() {
 
   const total = Object.values(p.evs).reduce((a,b)=>a+b,0);
 
-  // Showdown-style layout
+  // Showdown-style layout: sprite col + main col (fields | moves+stats)
   const nm = getNatureMods(p.nature);
   container.innerHTML = `
     <div class="sd-editor">
-      <!-- LEFT: sprite + shiny -->
+
+      <!-- LEFT: sprite + controls -->
       <div class="sd-sprite-col">
         <div class="sd-sprite-wrap">
           ${p.sprite
@@ -644,9 +645,11 @@ function renderEditor() {
         <button class="btn btn-danger btn-xs" onclick="handleRemovePokemon(${state.activeSlotIdx})" style="margin-top:4px;width:100%">✕ Quitar</button>
       </div>
 
-      <!-- CENTER: fields + moves -->
-      <div class="sd-center-col">
-        <div class="sd-row">
+      <!-- RIGHT: all fields + moves + stats together -->
+      <div class="sd-main-col">
+
+        <!-- Row 1: Pokemon info fields -->
+        <div class="sd-fields-grid">
           <div class="sd-field">
             <label>Pokémon</label>
             <input id="ac-pokemon-name" class="sd-input" value="${escHtml(p.name)}" placeholder="Nombre" autocomplete="off">
@@ -656,18 +659,14 @@ function renderEditor() {
             <input class="sd-input" value="${escHtml(p.nickname)}" placeholder="(opcional)" autocomplete="off"
               oninput="updatePokemonFieldSilent('nickname',this.value)">
           </div>
-        </div>
-        <div class="sd-row">
-          <div class="sd-field sd-field-wide">
+          <div class="sd-field">
             <label>Objeto</label>
             <input id="ac-item" class="sd-input" value="${escHtml(p.item)}" placeholder="Objeto" autocomplete="off">
           </div>
-        </div>
-        <div class="sd-row">
           <div class="sd-field">
             <label>Habilidad</label>
             <input id="ac-ability" class="sd-input" value="${escHtml(p.ability)}"
-              placeholder="${p.abilities.length?'Habilidad':'Elige un Pokémon'}"
+              placeholder="${p.abilities.length?'Habilidad':'Elige primero el Pokémon'}"
               autocomplete="off" ${!p.abilities.length?'readonly':''}>
           </div>
           <div class="sd-field">
@@ -675,54 +674,63 @@ function renderEditor() {
             <input id="ac-nature" class="sd-input" value="${escHtml(p.nature)}" placeholder="Naturaleza" autocomplete="off">
           </div>
         </div>
-        <div class="sd-moves">
-          ${p.moves.map((m,i)=>`
-            <div class="sd-move-row">
-              <span class="sd-move-num">${i+1}</span>
-              <input id="ac-move-${i}" class="sd-input sd-move-input" value="${escHtml(m)}" placeholder="Movimiento ${i+1}" autocomplete="off">
-            </div>`).join('')}
-        </div>
-      </div>
 
-      <!-- RIGHT: stats + EVs -->
-      <div class="sd-stats-col">
-        <div class="sd-stats-header">
-          <span>Stat</span><span>EV</span><span>Total</span>
-        </div>
-        ${STATS.map(s=>{
-          const natMod = nm[s];
-          const cls = natMod==='+'?'stat-plus':natMod==='-'?'stat-minus':'';
-          const statVal = p.baseStats ? calcStat(p.baseStats[s], p.evs[s], s==='HP', natMod) : '—';
-          return `<div class="sd-stat-row">
-            <span class="sd-stat-name ${cls}">${s}</span>
-            <input class="sd-ev-input" type="number" min="0" max="${EV_STAT_MAX}" value="${p.evs[s]}"
-              oninput="updateEV('${s}',parseInt(this.value)||0)">
-            <span class="sd-stat-val ${cls}" data-stat="${s}">${statVal}</span>
-            <input class="sd-ev-slider" type="range" min="0" max="${EV_STAT_MAX}" step="1"
-              value="${p.evs[s]}" data-ev-stat="${s}"
-              oninput="updateEV('${s}',parseInt(this.value)||0)">
-          </div>`;
-        }).join('')}
-        <div class="sd-ev-total-row">
-          <span class="ev-total ${total>EV_TOTAL_MAX?'over':'ok'}">${total}/${EV_TOTAL_MAX} pts</span>
-        </div>
-        <div class="sd-ev-presets">
-          <button class="btn btn-ghost btn-xs" onclick="spreadEVs()">Atk/Spe</button>
-          <button class="btn btn-ghost btn-xs" onclick="spreadEVsSpecial()">SpA/Spe</button>
-          <button class="btn btn-ghost btn-xs" onclick="clearEVs()">Limpiar</button>
+        <!-- Row 2: moves (left) + stats (right) -->
+        <div class="sd-lower-row">
+
+          <div class="sd-moves-col">
+            ${p.moves.map((m,i)=>`
+              <div class="sd-move-row">
+                <span class="sd-move-num">${i+1}</span>
+                <input id="ac-move-${i}" class="sd-input" value="${escHtml(m)}" placeholder="Movimiento ${i+1}" autocomplete="off">
+              </div>`).join('')}
+          </div>
+
+          <div class="sd-stats-col2">
+            <div class="sd-stat-hdr">
+              <span>Stat</span><span>Base</span><span class="sd-hdr-bar"></span><span>Pts</span><span></span><span>Total</span>
+            </div>
+            ${STATS.map(s=>{
+              const natMod = nm[s];
+              const cls = natMod==='+'?'stat-plus':natMod==='-'?'stat-minus':'';
+              const base = p.baseStats?p.baseStats[s]:0;
+              const statVal = p.baseStats?calcStat(p.baseStats[s],p.evs[s],s==='HP',natMod):'—';
+              // Base stat bar: color based on value like Showdown
+              const basePct = Math.min(100, Math.round((base/255)*100));
+              const barColor = base>=100?'#60c040':base>=60?'#a0d040':base>=40?'#e0d040':'#f06040';
+              return `<div class="sd-stat-row2">
+                <span class="sn ${cls}">${s}</span>
+                <span class="sb">${base||'—'}</span>
+                <div class="sd-base-bar-wrap">
+                  <div class="sd-base-bar" style="width:${basePct}%;background:${barColor}"></div>
+                </div>
+                <input class="sd-ev-n" type="number" min="0" max="${EV_STAT_MAX}" value="${p.evs[s]}"
+                  oninput="updateEV('${s}',parseInt(this.value)||0)">
+                <input class="sd-ev-slider" type="range" min="0" max="${EV_STAT_MAX}" step="1"
+                  value="${p.evs[s]}" data-ev-stat="${s}"
+                  oninput="updateEV('${s}',parseInt(this.value)||0);syncSlider(this)">
+                <span class="sv ${cls}" data-stat="${s}">${statVal}</span>
+              </div>`;
+            }).join('')}
+            <div class="sd-stat-footer">
+              <span class="ev-total ${total>EV_TOTAL_MAX?'over':'ok'}">${total}/${EV_TOTAL_MAX} restantes: ${Math.max(0,EV_TOTAL_MAX-total)}</span>
+              <div style="display:flex;gap:4px">
+                <button class="btn btn-ghost btn-xs" onclick="spreadEVs()">Atk/Spe</button>
+                <button class="btn btn-ghost btn-xs" onclick="spreadEVsSpecial()">SpA/Spe</button>
+                <button class="btn btn-ghost btn-xs" onclick="clearEVs()">Limpiar</button>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>`;
 
   setupEditorAutocompletes(p);
-  // Init slider track colors
+  // Init all slider colors
   STATS.forEach(s => {
     const sl = document.querySelector(`.sd-ev-slider[data-ev-stat="${s}"]`);
-    if (sl) {
-      const pct = (p.evs[s] / EV_STAT_MAX) * 100;
-      const color = p.evs[s] >= EV_STAT_MAX ? 'var(--gold)' : 'var(--red)';
-      sl.style.background = `linear-gradient(to right, ${color} ${pct}%, var(--bg-hover, #333) ${pct}%)`;
-    }
+    if (sl) syncSlider(sl);
   });
 }
 
@@ -886,9 +894,12 @@ window.updateEV = (stat, value) => {
   // Update stat value display
   const nm = getNatureMods(p.nature);
   const statEl = document.querySelector(`[data-stat="${stat}"]`);
-  if (statEl && p.baseStats) statEl.textContent = calcStat(p.baseStats[stat], p.evs[stat], stat==='HP', nm[stat]);
+  if (statEl && p.baseStats) { statEl.textContent = calcStat(p.baseStats[stat], p.evs[stat], stat==='HP', nm[stat]); }
+  // Sync slider position and color
+  const slider = document.querySelector(`.sd-ev-slider[data-ev-stat="${stat}"]`);
+  if (slider) { slider.value = p.evs[stat]; syncSlider(slider); }
   // Fix input if capped
-  const evInput = document.querySelector(`[data-ev-stat="${stat}"]`)?.closest('.sd-stat-row')?.querySelector('.sd-ev-input');
+  const evInput = document.querySelector(`[data-ev-stat="${stat}"]`)?.closest('.sd-stat-row2')?.querySelector('.sd-ev-n');
   if (evInput && parseInt(evInput.value) !== p.evs[stat]) evInput.value = p.evs[stat];
 };
 
@@ -943,6 +954,13 @@ function toast(msg, type = 'info') {
   c.appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
+
+window.syncSlider = (sliderEl) => {
+  const pct = (parseInt(sliderEl.value) / EV_STAT_MAX) * 100;
+  const capped = parseInt(sliderEl.value) >= EV_STAT_MAX;
+  sliderEl.style.setProperty('--sl-pct', pct + '%');
+  sliderEl.style.setProperty('--sl-color', capped ? 'var(--gold)' : 'var(--red)');
+};
 
 window.updateStatColors = () => {
   const p = getActivePokemon(); if (!p) return;
