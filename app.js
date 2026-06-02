@@ -688,32 +688,30 @@ function renderEditor() {
 
           <div class="sd-stats-col2">
             <div class="sd-stat-hdr">
-              <span>Stat</span><span>Base</span><span class="sd-hdr-bar"></span><span>Pts</span><span></span><span>Total</span>
+              <span>Stat</span><span>Base</span><span>Barra</span><span>Pts</span><span>Total</span>
             </div>
             ${STATS.map(s=>{
               const natMod = nm[s];
               const cls = natMod==='+'?'stat-plus':natMod==='-'?'stat-minus':'';
-              const base = p.baseStats?p.baseStats[s]:0;
+              const base = p.baseStats?p.baseStats[s]:'—';
               const statVal = p.baseStats?calcStat(p.baseStats[s],p.evs[s],s==='HP',natMod):'—';
-              // Base stat bar: color based on value like Showdown
-              const basePct = Math.min(100, Math.round((base/255)*100));
-              const barColor = base>=100?'#60c040':base>=60?'#a0d040':base>=40?'#e0d040':'#f06040';
+              const basePct = p.baseStats?Math.min(100,Math.round((p.baseStats[s]/255)*100)):0;
+              const barColor = !p.baseStats?'#888':p.baseStats[s]>=100?'#60c040':p.baseStats[s]>=60?'#a0d040':p.baseStats[s]>=40?'#e0d040':'#f06040';
+              const evPct = Math.round((p.evs[s]/EV_STAT_MAX)*100);
               return `<div class="sd-stat-row2">
                 <span class="sn ${cls}">${s}</span>
-                <span class="sb">${base||'—'}</span>
-                <div class="sd-base-bar-wrap">
+                <span class="sb">${base}</span>
+                <div class="sd-bars-wrap" onclick="handleEvTrackClick(event,'${s}')">
                   <div class="sd-base-bar" style="width:${basePct}%;background:${barColor}"></div>
+                  <div class="sd-ev-bar-inner${p.evs[s]>=EV_STAT_MAX?' maxed':''}" style="width:${evPct}%" data-ev-stat="${s}"></div>
                 </div>
                 <input class="sd-ev-n" type="number" min="0" max="${EV_STAT_MAX}" value="${p.evs[s]}"
                   oninput="updateEV('${s}',parseInt(this.value)||0)">
-                <input class="sd-ev-slider" type="range" min="0" max="${EV_STAT_MAX}" step="1"
-                  value="${p.evs[s]}" data-ev-stat="${s}"
-                  oninput="updateEV('${s}',parseInt(this.value)||0);syncSlider(this)">
                 <span class="sv ${cls}" data-stat="${s}">${statVal}</span>
               </div>`;
             }).join('')}
             <div class="sd-stat-footer">
-              <span class="ev-total ${total>EV_TOTAL_MAX?'over':'ok'}">${total}/${EV_TOTAL_MAX} restantes: ${Math.max(0,EV_TOTAL_MAX-total)}</span>
+              <span class="ev-total ${total>EV_TOTAL_MAX?'over':'ok'}">Restantes: ${Math.max(0,EV_TOTAL_MAX-total)}/${EV_TOTAL_MAX}</span>
               <div style="display:flex;gap:4px">
                 <button class="btn btn-ghost btn-xs" onclick="spreadEVs()">Atk/Spe</button>
                 <button class="btn btn-ghost btn-xs" onclick="spreadEVsSpecial()">SpA/Spe</button>
@@ -727,11 +725,7 @@ function renderEditor() {
     </div>`;
 
   setupEditorAutocompletes(p);
-  // Init all slider colors
-  STATS.forEach(s => {
-    const sl = document.querySelector(`.sd-ev-slider[data-ev-stat="${s}"]`);
-    if (sl) syncSlider(sl);
-  });
+  renderStatsSection(p);
 }
 
 function setupEditorAutocompletes(p) {
@@ -817,8 +811,8 @@ window.handlePokemonNameChange = async (name) => {
     if (moveEl) setupMoveAC(moveEl, i, p.legalMoves);
   });
 
-  // 4. Update stats display
-  updateStatColors();
+  // 4. Re-render stats section with actual baseStats
+  renderStatsSection(p);
 
   // 5. Update the grid slot
   updateGridSlot(state.activeSlotIdx);
@@ -893,7 +887,10 @@ window.updateEV = (stat, value) => {
   if (evInput && parseInt(evInput.value) !== p.evs[stat]) evInput.value = p.evs[stat];
 };
 
-window.handleEvTrackClick = () => {}; // replaced by slider
+window.handleEvTrackClick = (e, stat) => {
+  const r = e.currentTarget.getBoundingClientRect();
+  updateEV(stat, Math.max(0, Math.min(EV_STAT_MAX, Math.round((e.clientX-r.left)/r.width*EV_STAT_MAX))));
+};
 
 window.spreadEVs = () => { const p = getActivePokemon(); if (!p) return; STATS.forEach(s => p.evs[s]=0); p.evs.Atk=32; p.evs.Spe=32; p.evs.HP=2; renderEditor(); };
 window.spreadEVsSpecial = () => { const p = getActivePokemon(); if (!p) return; STATS.forEach(s => p.evs[s]=0); p.evs.SpA=32; p.evs.Spe=32; p.evs.HP=2; renderEditor(); };
@@ -952,8 +949,38 @@ window.syncSlider = (sliderEl) => {
   sliderEl.style.setProperty('--sl-color', capped ? 'var(--gold)' : 'var(--red)');
 };
 
+
+// Re-render just the stats section when baseStats arrive
+function renderStatsSection(p) {
+  if (!p || !p.baseStats) return;
+  const nm = getNatureMods(p.nature);
+  STATS.forEach(s => {
+    const natMod = nm[s];
+    const cls = natMod==='+'?'stat-plus':natMod==='-'?'stat-minus':'';
+    const base = p.baseStats[s];
+    const statVal = calcStat(base, p.evs[s], s==='HP', natMod);
+    const basePct = Math.min(100, Math.round((base/255)*100));
+    const barColor = base>=100?'#60c040':base>=60?'#a0d040':base>=40?'#e0d040':'#f06040';
+    const evPct = Math.round((p.evs[s]/EV_STAT_MAX)*100);
+    // Update base bar
+    const row = document.querySelector(`.sd-ev-bar-inner[data-ev-stat="${s}"]`)?.closest('.sd-stat-row2');
+    if (!row) return;
+    const baseBar = row.querySelector('.sd-base-bar');
+    if (baseBar) { baseBar.style.width = basePct+'%'; baseBar.style.background = barColor; }
+    const evBar = row.querySelector('.sd-ev-bar-inner');
+    if (evBar) evBar.style.width = evPct+'%';
+    const nameEl = row.querySelector('.sn');
+    if (nameEl) nameEl.className = `sn ${cls}`;
+    const valEl = row.querySelector('.sv');
+    if (valEl) { valEl.textContent = statVal; valEl.className = `sv ${cls}`; }
+    const baseEl = row.querySelector('.sb');
+    if (baseEl) baseEl.textContent = base;
+  });
+}
+
 window.updateStatColors = () => {
   const p = getActivePokemon(); if (!p) return;
+  renderStatsSection(p);
   const nm = getNatureMods(p.nature);
   STATS.forEach(s => {
     const rows = document.querySelectorAll('.ev-row');
