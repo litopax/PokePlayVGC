@@ -690,8 +690,12 @@ function evBar(i, stat, label){
   const over = total>66;
   const pct = Math.min(100, Math.round(val/32*100));
   const full = val>=32;
+  const sd = speciesData(teamDraft.pokemon[i].name);
+  const base = sd && sd.b && sd.b[stat] != null ? sd.b[stat] : null;
+  const baseTxt = base !== null ? `<span style="font-size:10px;color:var(--txt2);width:24px;text-align:right;flex-shrink:0">${base}</span>` : `<span style="width:24px;flex-shrink:0"></span>`;
   return `<div class="ev-stat-row">
     <span class="ev-stat-label">${label}</span>
+    ${baseTxt}
     <div class="ev-stat-bar-wrap"><div class="ev-stat-bar${full?' ev-full':''}" style="width:${pct}%"></div></div>
     <input class="ev-stat-input" type="number" min="0" max="32" placeholder="0" value="${val||''}"
       oninput="setStat(${i},'evs','${stat}',this.value);debouncedEvRefresh(${i})">
@@ -715,7 +719,7 @@ function monEditor(p, i){
   </div>
 
   <div class="ps-header">
-    <img class="ps-sprite-big" src="${SPRITE(p.name,p.shiny)}" onerror="this.style.opacity='.3'">
+    <img class="ps-sprite-big" src="${p.name ? SPRITE(p.name,p.shiny) : 'https://img.pokemondb.net/sprites/items/poke-ball.png'}" onerror="this.src='https://img.pokemondb.net/sprites/items/poke-ball.png'" style="${p.name?'':' opacity:0.4'}">
     <div class="ps-mon-inputs">
       <div class="ac-wrap"><input class="ps-field" style="font-size:14px;font-weight:700"
         data-ac="mon" autocomplete="off" placeholder="Nombre del Pokémon…"
