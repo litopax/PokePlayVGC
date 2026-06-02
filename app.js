@@ -470,7 +470,7 @@ function renderContent() {
   }
   const slots = Array.from({length: 6}, (_, i) => {
     const p = team.pokemon[i];
-    return p && p.name ? renderFilledSlot(p, i) : `
+    return (p && p.name) ? renderFilledSlot(p, i) : `
       <div class="pokemon-slot empty" onclick="handleAddPokemon(${i})">
         <div class="empty-icon">➕</div><span>Agregar Pokémon</span>
       </div>`;
@@ -493,7 +493,7 @@ function renderContent() {
     <div id="editor-container"></div>
     <div class="pokemon-grid" id="pokemon-grid">${slots.join('')}</div>`;
 
-  if (state.activeSlotIdx !== null && getActivePokemon()?.name) renderEditor();
+  if (state.activeSlotIdx !== null && getActivePokemon()) renderEditor();
 }
 
 function renderFilledSlot(p, idx) {
@@ -666,8 +666,9 @@ window.handleSlotClick = (idx) => {
 };
 window.handleAddPokemon = (idx) => {
   const team = getActiveTeam(); if (!team) return;
-  while (team.pokemon.length <= idx) team.pokemon.push(null);
-  team.pokemon[idx] = makePokemon();
+  // Fill any gaps with empty pokemon objects (not null) so getActivePokemon works
+  while (team.pokemon.length <= idx) team.pokemon.push(makePokemon());
+  if (!team.pokemon[idx]) team.pokemon[idx] = makePokemon();
   state.activeSlotIdx = idx; renderContent();
 };
 window.handleRemovePokemon = (idx, e) => {
