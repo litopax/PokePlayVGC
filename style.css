@@ -1345,3 +1345,14 @@ body::before {
 .sd-ev-slider { 
   background: linear-gradient(to right, var(--red) 0%, var(--red) 0%, var(--bg-hover, #333) 0%);
 }
+
+.sd-ev-total-row {
+  text-align: right;
+  padding: 4px 0 2px;
+  border-top: 1px solid var(--border);
+  margin-top: 2px;
+}
+.sd-ev-total-row .ev-total {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+}
