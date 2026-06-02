@@ -136,26 +136,45 @@ async function getAllPokemonList() {
 async function loadTeams() {
   if (!state.user) return;
   const { data, error } = await supabase.from('teams').select('*').order('updated_at', { ascending: false });
-  if (error) { toast('Error loading teams', 'error'); return; }
-  state.teams = data.map(t => ({ ...t, pokemon: t.pokemon || [] }));
-  if (state.teams.length > 0 && !state.activeTeamId) state.activeTeamId = state.teams[0].id;
+  if (error) { toast('Error cargando equipos: ' + error.message, 'error'); console.error('[DB]', error); return; }
+  state.teams = (data || []).map(t => ({ ...t, pokemon: t.pokemon || [] }));
+  // Always select the most recent team (or keep current if still exists)
+  const currentExists = state.activeTeamId && state.teams.some(t => t.id === state.activeTeamId);
+  if (!currentExists) state.activeTeamId = state.teams[0]?.id || null;
+  state.activeSlotIdx = null;
   renderAll();
+  console.log('[DB] Loaded', state.teams.length, 'teams');
 }
 
 async function saveTeam(team) {
-  if (!state.user) { toast('Log in to save teams', 'error'); return; }
-  const payload = { name: team.name, format: team.format, pokemon: team.pokemon,
-    user_id: state.user.id, updated_at: new Date().toISOString() };
+  if (!state.user) { toast('Iniciá sesión para guardar', 'error'); return; }
+  const payload = {
+    name: team.name, format: team.format,
+    pokemon: team.pokemon.map(p => p ? {
+      name: p.name, nickname: p.nickname, item: p.item, ability: p.ability,
+      nature: p.nature, shiny: p.shiny, gender: p.gender, level: p.level,
+      moves: p.moves, evs: p.evs, types: p.types,
+      sprite: p.sprite, shinySprite: p.shinySprite, baseStats: p.baseStats,
+      abilities: p.abilities, legalMoves: p.legalMoves
+    } : null).filter(Boolean),
+    user_id: state.user.id,
+    updated_at: new Date().toISOString()
+  };
   if (team.id && !String(team.id).startsWith('local_')) {
     const { error } = await supabase.from('teams').update(payload).eq('id', team.id);
-    if (error) { toast('Save failed: ' + error.message, 'error'); return; }
+    if (error) { toast('Error al guardar: ' + error.message, 'error'); console.error('[DB]', error); return; }
   } else {
     const { data, error } = await supabase.from('teams').insert(payload).select().single();
-    if (error) { toast('Save failed: ' + error.message, 'error'); return; }
-    const idx = state.teams.findIndex(t => t.id === team.id);
-    if (idx !== -1) { state.teams[idx] = { ...data, pokemon: data.pokemon || [] }; state.activeTeamId = data.id; }
+    if (error) { toast('Error al guardar: ' + error.message, 'error'); console.error('[DB]', error); return; }
+    if (data) {
+      const idx = state.teams.findIndex(t => t.id === team.id);
+      const saved = { ...data, pokemon: data.pokemon || [] };
+      if (idx !== -1) state.teams[idx] = saved;
+      else state.teams.unshift(saved);
+      state.activeTeamId = data.id;
+    }
   }
-  toast('Team saved!', 'success');
+  toast('¡Equipo guardado!', 'success');
   renderSidebar();
 }
 
@@ -882,7 +901,19 @@ window.handleAuthSubmit = async () => {
   }
 };
 window.handleAuthTabSwitch = (tab) => { document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab)); };
-window.handleLogout = async () => await supabase.auth.signOut();
+window.handleLogout = async () => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) { toast('Error al cerrar sesión: ' + error.message, 'error'); return; }
+    // Force UI reset in case onAuthStateChange doesn't fire
+    state.user = null; state.teams = []; state.activeTeamId = null; state.activeSlotIdx = null;
+    const overlay = document.getElementById('auth-overlay');
+    const userInfo = document.getElementById('user-info');
+    if (overlay) overlay.style.display = 'flex';
+    if (userInfo) userInfo.innerHTML = '';
+    renderAll();
+  } catch(e) { toast('Error: ' + e.message, 'error'); }
+};
 
 // ─── TOAST ───────────────────────────────────────────────────
 function toast(msg, type = 'info') {
@@ -936,17 +967,23 @@ async function init() {
   // Learnsets already loading via top-level fetch
 
   supabase.auth.onAuthStateChange(async (event, session) => {
-    state.user = session?.user || null;
+    console.log('[Auth] event:', event);
     const overlay = document.getElementById('auth-overlay');
     const userInfo = document.getElementById('user-info');
-    if (state.user) {
+
+    if (session?.user) {
+      const isNewLogin = !state.user || state.user.id !== session.user.id;
+      state.user = session.user;
       overlay.style.display = 'none';
-      userInfo.innerHTML = `<div class="user-avatar">👤</div><span>${escHtml(state.user.email.split('@')[0])}</span><button class="btn btn-ghost btn-sm" onclick="handleLogout()">Salir</button>`;
+      userInfo.innerHTML = `<div class="user-avatar">👤</div><span>${escHtml(state.user.email.split('@')[0])}</span><button class="btn btn-ghost btn-sm" onclick="window.handleLogout()">Salir</button>`;
+      // Reset team state on new login so loadTeams picks first team
+      if (isNewLogin) { state.activeTeamId = null; state.activeSlotIdx = null; }
       await loadTeams();
     } else {
+      state.user = null;
+      state.teams = []; state.activeTeamId = null; state.activeSlotIdx = null;
       overlay.style.display = 'flex';
       userInfo.innerHTML = '';
-      state.teams = []; state.activeTeamId = null;
       renderAll();
     }
   });
