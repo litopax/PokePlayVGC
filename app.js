@@ -398,9 +398,17 @@ function setupAutocomplete(inputEl, getItems, onSelect, opts = {}) {
     }
   });
 
-  inputEl.addEventListener('blur', () => {
+  inputEl.addEventListener('blur', (e) => {
     if (_acMouseDown) { _acMouseDown = false; return; }
-    setTimeout(hideDropdown, 50);
+    // Don't close if focus moved to another input that will open its own dropdown
+    setTimeout(() => {
+      const active = document.activeElement;
+      const isACInput = active && (
+        active.matches('.sd-input, .field-input, .move-input') ||
+        active.closest('.ac-dropdown')
+      );
+      if (!isACInput) hideDropdown();
+    }, 100);
   });
 }
 
@@ -992,7 +1000,9 @@ async function init() {
 
   document.addEventListener('click', e => {
     const dd = document.getElementById('ac-dropdown');
-    if (dd && !dd.contains(e.target) && !e.target.matches('.field-input,.move-input')) hideDropdown();
+    if (dd && !dd.contains(e.target) && !e.target.closest('.sd-input, .field-input, .move-input, .ac-dropdown')) {
+      hideDropdown();
+    }
   });
 }
 
