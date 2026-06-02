@@ -1,0 +1,1334 @@
+{
+  "scraped_at": "2026-06-02T20:12:54.729Z",
+  "total_pokemon": 4,
+  "learnsets": {
+    "Pikachu": [
+      {
+        "name": "Megapatada",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Golpe Cuerpo",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Fachada",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Sorpresa",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Ataque Rápido",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Amago",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Esfuerzo",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Azote",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Canon",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Ronquido",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Cosquillas",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Deseo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Refuerzo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Otra Vez",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Sonámbulo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Aguante",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Protección",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Sustituto",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Doble Equipo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Abrecaminos",
+        "type": "planta",
+        "category": "físico"
+      },
+      {
+        "name": "Hierba Lazo",
+        "type": "planta",
+        "category": "especial"
+      },
+      {
+        "name": "Surf",
+        "type": "agua",
+        "category": "especial"
+      },
+      {
+        "name": "Danza Lluvia",
+        "type": "agua",
+        "category": "estado"
+      },
+      {
+        "name": "Placaje Eléctrico",
+        "type": "eléctrico",
+        "category": "físico"
+      },
+      {
+        "name": "Voltio Cruel",
+        "type": "eléctrico",
+        "category": "físico"
+      },
+      {
+        "name": "Puño Trueno",
+        "type": "eléctrico",
+        "category": "físico"
+      },
+      {
+        "name": "Moflete Estático",
+        "type": "eléctrico",
+        "category": "físico"
+      },
+      {
+        "name": "Electrocañón",
+        "type": "eléctrico",
+        "category": "especial"
+      },
+      {
+        "name": "Trueno",
+        "type": "eléctrico",
+        "category": "especial"
+      },
+      {
+        "name": "Rayo",
+        "type": "eléctrico",
+        "category": "especial"
+      },
+      {
+        "name": "Chispazo",
+        "type": "eléctrico",
+        "category": "especial"
+      },
+      {
+        "name": "Alto Voltaje",
+        "type": "eléctrico",
+        "category": "especial"
+      },
+      {
+        "name": "Voltiocambio",
+        "type": "eléctrico",
+        "category": "especial"
+      },
+      {
+        "name": "Electrotela",
+        "type": "eléctrico",
+        "category": "especial"
+      },
+      {
+        "name": "Rayo Carga",
+        "type": "eléctrico",
+        "category": "especial"
+      },
+      {
+        "name": "Bola Voltio",
+        "type": "eléctrico",
+        "category": "especial"
+      },
+      {
+        "name": "Campo Eléctrico",
+        "type": "eléctrico",
+        "category": "estado"
+      },
+      {
+        "name": "Onda Anómala",
+        "type": "eléctrico",
+        "category": "estado"
+      },
+      {
+        "name": "Carga",
+        "type": "eléctrico",
+        "category": "estado"
+      },
+      {
+        "name": "Onda Trueno",
+        "type": "eléctrico",
+        "category": "estado"
+      },
+      {
+        "name": "Excavar",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Puño Certero",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Demolición",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Palma Rauda",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Inversión",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Descanso",
+        "type": "psíquico",
+        "category": "estado"
+      },
+      {
+        "name": "Reflejo",
+        "type": "psíquico",
+        "category": "estado"
+      },
+      {
+        "name": "Pantalla de Luz",
+        "type": "psíquico",
+        "category": "estado"
+      },
+      {
+        "name": "Agilidad",
+        "type": "psíquico",
+        "category": "estado"
+      },
+      {
+        "name": "Desarme",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Ladrón",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Lanzamiento",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Maquinación",
+        "type": "siniestro",
+        "category": "estado"
+      },
+      {
+        "name": "Llanto Falso",
+        "type": "siniestro",
+        "category": "estado"
+      },
+      {
+        "name": "Cola Férrea",
+        "type": "acero",
+        "category": "físico"
+      },
+      {
+        "name": "Carantoña",
+        "type": "hada",
+        "category": "físico"
+      },
+      {
+        "name": "Canto Encantador",
+        "type": "hada",
+        "category": "especial"
+      },
+      {
+        "name": "Beso Drenaje",
+        "type": "hada",
+        "category": "especial"
+      },
+      {
+        "name": "Encanto",
+        "type": "hada",
+        "category": "estado"
+      },
+      {
+        "name": "Beso Dulce",
+        "type": "hada",
+        "category": "estado"
+      }
+    ],
+    "Charizard": [
+      {
+        "name": "Gigaimpacto",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Doble Filo",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Megapatada",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Golpe Cuerpo",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Fachada",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Hiperrayo",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Canon",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Meteorobola",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Ronquido",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Refuerzo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Sonámbulo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Aguante",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Tambor",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Cara Susto",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Protección",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Sustituto",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Rugido",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Danza Espada",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Rayo Solar",
+        "type": "planta",
+        "category": "especial"
+      },
+      {
+        "name": "Envite Ígneo",
+        "type": "fuego",
+        "category": "físico"
+      },
+      {
+        "name": "Cólera Ardiente",
+        "type": "fuego",
+        "category": "físico"
+      },
+      {
+        "name": "Puño Fuego",
+        "type": "fuego",
+        "category": "físico"
+      },
+      {
+        "name": "Colmillo Ígneo",
+        "type": "fuego",
+        "category": "físico"
+      },
+      {
+        "name": "Nitrocarga",
+        "type": "fuego",
+        "category": "físico"
+      },
+      {
+        "name": "Golpe Calor",
+        "type": "fuego",
+        "category": "físico"
+      },
+      {
+        "name": "Anillo Ígneo",
+        "type": "fuego",
+        "category": "especial"
+      },
+      {
+        "name": "Sofoco",
+        "type": "fuego",
+        "category": "especial"
+      },
+      {
+        "name": "Llamarada",
+        "type": "fuego",
+        "category": "especial"
+      },
+      {
+        "name": "Infierno",
+        "type": "fuego",
+        "category": "especial"
+      },
+      {
+        "name": "Onda Ígnea",
+        "type": "fuego",
+        "category": "especial"
+      },
+      {
+        "name": "Lanzallamas",
+        "type": "fuego",
+        "category": "especial"
+      },
+      {
+        "name": "Giro Fuego",
+        "type": "fuego",
+        "category": "especial"
+      },
+      {
+        "name": "Fuego Fatuo",
+        "type": "fuego",
+        "category": "estado"
+      },
+      {
+        "name": "Día Soleado",
+        "type": "fuego",
+        "category": "estado"
+      },
+      {
+        "name": "Puño Trueno",
+        "type": "eléctrico",
+        "category": "físico"
+      },
+      {
+        "name": "Vuelo",
+        "type": "volador",
+        "category": "físico"
+      },
+      {
+        "name": "Golpe Aéreo",
+        "type": "volador",
+        "category": "físico"
+      },
+      {
+        "name": "Acróbata",
+        "type": "volador",
+        "category": "físico"
+      },
+      {
+        "name": "Vendaval",
+        "type": "volador",
+        "category": "especial"
+      },
+      {
+        "name": "Tajo Aéreo",
+        "type": "volador",
+        "category": "especial"
+      },
+      {
+        "name": "Aire Afilado",
+        "type": "volador",
+        "category": "especial"
+      },
+      {
+        "name": "Respiro",
+        "type": "volador",
+        "category": "estado"
+      },
+      {
+        "name": "Avalancha",
+        "type": "roca",
+        "category": "físico"
+      },
+      {
+        "name": "Tumba Rocas",
+        "type": "roca",
+        "category": "físico"
+      },
+      {
+        "name": "Poder Pasado",
+        "type": "roca",
+        "category": "especial"
+      },
+      {
+        "name": "Tormenta de Arena",
+        "type": "roca",
+        "category": "estado"
+      },
+      {
+        "name": "Terremoto",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Excavar",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Terratemblor",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Arenas Ardientes",
+        "type": "tierra",
+        "category": "especial"
+      },
+      {
+        "name": "Puño Certero",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Demolición",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Contraataque",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Onda Certera",
+        "type": "lucha",
+        "category": "especial"
+      },
+      {
+        "name": "Descanso",
+        "type": "psíquico",
+        "category": "estado"
+      },
+      {
+        "name": "Garra Umbría",
+        "type": "fantasma",
+        "category": "físico"
+      },
+      {
+        "name": "Enfado",
+        "type": "dragón",
+        "category": "físico"
+      },
+      {
+        "name": "Carga Dragón",
+        "type": "dragón",
+        "category": "físico"
+      },
+      {
+        "name": "Garra Dragón",
+        "type": "dragón",
+        "category": "físico"
+      },
+      {
+        "name": "Vasto Impacto",
+        "type": "dragón",
+        "category": "físico"
+      },
+      {
+        "name": "Cola Dragón",
+        "type": "dragón",
+        "category": "físico"
+      },
+      {
+        "name": "Ráfaga Escamas",
+        "type": "dragón",
+        "category": "físico"
+      },
+      {
+        "name": "Pulso Dragón",
+        "type": "dragón",
+        "category": "especial"
+      },
+      {
+        "name": "Bramido Dragón",
+        "type": "dragón",
+        "category": "estado"
+      },
+      {
+        "name": "Danza Dragón",
+        "type": "dragón",
+        "category": "estado"
+      },
+      {
+        "name": "Triturar",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Giro Vil",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Mordisco",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Lanzamiento",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Paliza",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Cola Férrea",
+        "type": "acero",
+        "category": "físico"
+      },
+      {
+        "name": "Ala de Acero",
+        "type": "acero",
+        "category": "físico"
+      }
+    ],
+    "Azumarill": [
+      {
+        "name": "Gigaimpacto",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Doble Filo",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Golpe Cuerpo",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Fachada",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Hiperrayo",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Vozarrón",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Alboroto",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Canon",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Ronquido",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Copión",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Cosquillas",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Refuerzo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Otra Vez",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Sonámbulo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Aguante",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Canto Mortal",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Tambor",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Protección",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Sustituto",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Canto",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Abrecaminos",
+        "type": "planta",
+        "category": "físico"
+      },
+      {
+        "name": "Hierba Lazo",
+        "type": "planta",
+        "category": "especial"
+      },
+      {
+        "name": "Acua Cola",
+        "type": "agua",
+        "category": "físico"
+      },
+      {
+        "name": "Hidroariete",
+        "type": "agua",
+        "category": "físico"
+      },
+      {
+        "name": "Buceo",
+        "type": "agua",
+        "category": "físico"
+      },
+      {
+        "name": "Cascada",
+        "type": "agua",
+        "category": "físico"
+      },
+      {
+        "name": "Acua Jet",
+        "type": "agua",
+        "category": "físico"
+      },
+      {
+        "name": "Hidrobomba",
+        "type": "agua",
+        "category": "especial"
+      },
+      {
+        "name": "Agua Lodosa",
+        "type": "agua",
+        "category": "especial"
+      },
+      {
+        "name": "Surf",
+        "type": "agua",
+        "category": "especial"
+      },
+      {
+        "name": "Hidropulso",
+        "type": "agua",
+        "category": "especial"
+      },
+      {
+        "name": "Agua Fría",
+        "type": "agua",
+        "category": "especial"
+      },
+      {
+        "name": "Torbellino",
+        "type": "agua",
+        "category": "especial"
+      },
+      {
+        "name": "Empapar",
+        "type": "agua",
+        "category": "estado"
+      },
+      {
+        "name": "Acua Aro",
+        "type": "agua",
+        "category": "estado"
+      },
+      {
+        "name": "Danza Lluvia",
+        "type": "agua",
+        "category": "estado"
+      },
+      {
+        "name": "Bote",
+        "type": "volador",
+        "category": "físico"
+      },
+      {
+        "name": "Excavar",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Terratemblor",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Disparo Lodo",
+        "type": "tierra",
+        "category": "especial"
+      },
+      {
+        "name": "Bofetón Lodo",
+        "type": "tierra",
+        "category": "especial"
+      },
+      {
+        "name": "Pirueta Helada",
+        "type": "hielo",
+        "category": "físico"
+      },
+      {
+        "name": "Puño Hielo",
+        "type": "hielo",
+        "category": "físico"
+      },
+      {
+        "name": "Ventisca",
+        "type": "hielo",
+        "category": "especial"
+      },
+      {
+        "name": "Rayo Hielo",
+        "type": "hielo",
+        "category": "especial"
+      },
+      {
+        "name": "Viento Hielo",
+        "type": "hielo",
+        "category": "especial"
+      },
+      {
+        "name": "Paisaje Nevado",
+        "type": "hielo",
+        "category": "estado"
+      },
+      {
+        "name": "Puño Certero",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Fuerza Bruta",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Demolición",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Onda Certera",
+        "type": "lucha",
+        "category": "especial"
+      },
+      {
+        "name": "Premonición",
+        "type": "psíquico",
+        "category": "especial"
+      },
+      {
+        "name": "Descanso",
+        "type": "psíquico",
+        "category": "estado"
+      },
+      {
+        "name": "Amnesia",
+        "type": "psíquico",
+        "category": "estado"
+      },
+      {
+        "name": "Pantalla de Luz",
+        "type": "psíquico",
+        "category": "estado"
+      },
+      {
+        "name": "Desarme",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Giro Vil",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Lanzamiento",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Llanto Falso",
+        "type": "siniestro",
+        "category": "estado"
+      },
+      {
+        "name": "Cola Férrea",
+        "type": "acero",
+        "category": "físico"
+      },
+      {
+        "name": "Carantoña",
+        "type": "hada",
+        "category": "físico"
+      },
+      {
+        "name": "Bruma Explosiva",
+        "type": "hada",
+        "category": "especial"
+      },
+      {
+        "name": "Canto Encantador",
+        "type": "hada",
+        "category": "especial"
+      },
+      {
+        "name": "Beso Drenaje",
+        "type": "hada",
+        "category": "especial"
+      },
+      {
+        "name": "Campo de Niebla",
+        "type": "hada",
+        "category": "estado"
+      },
+      {
+        "name": "Encanto",
+        "type": "hada",
+        "category": "estado"
+      }
+    ],
+    "Steelix": [
+      {
+        "name": "Autodestrucción",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Gigaimpacto",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Doble Filo",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Golpe Cuerpo",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Fachada",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Atadura",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Azote",
+        "type": "normal",
+        "category": "físico"
+      },
+      {
+        "name": "Hiperrayo",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Canon",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Ronquido",
+        "type": "normal",
+        "category": "especial"
+      },
+      {
+        "name": "Bloqueo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Sonámbulo",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Atracción",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Aguante",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Cara Susto",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Protección",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Sustituto",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Chirrido",
+        "type": "normal",
+        "category": "estado"
+      },
+      {
+        "name": "Colmillo Ígneo",
+        "type": "fuego",
+        "category": "físico"
+      },
+      {
+        "name": "Día Soleado",
+        "type": "fuego",
+        "category": "estado"
+      },
+      {
+        "name": "Colmillo Rayo",
+        "type": "eléctrico",
+        "category": "físico"
+      },
+      {
+        "name": "Levitón",
+        "type": "eléctrico",
+        "category": "estado"
+      },
+      {
+        "name": "Testarazo",
+        "type": "roca",
+        "category": "físico"
+      },
+      {
+        "name": "Roca Afilada",
+        "type": "roca",
+        "category": "físico"
+      },
+      {
+        "name": "Avalancha",
+        "type": "roca",
+        "category": "físico"
+      },
+      {
+        "name": "Tumba Rocas",
+        "type": "roca",
+        "category": "físico"
+      },
+      {
+        "name": "Antiaéreo",
+        "type": "roca",
+        "category": "físico"
+      },
+      {
+        "name": "Pedrada",
+        "type": "roca",
+        "category": "físico"
+      },
+      {
+        "name": "Rayo Meteórico",
+        "type": "roca",
+        "category": "especial"
+      },
+      {
+        "name": "Poder Pasado",
+        "type": "roca",
+        "category": "especial"
+      },
+      {
+        "name": "Vasta Guardia",
+        "type": "roca",
+        "category": "estado"
+      },
+      {
+        "name": "Trampa Rocas",
+        "type": "roca",
+        "category": "estado"
+      },
+      {
+        "name": "Pulimento",
+        "type": "roca",
+        "category": "estado"
+      },
+      {
+        "name": "Tormenta de Arena",
+        "type": "roca",
+        "category": "estado"
+      },
+      {
+        "name": "Terremoto",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Fuerza Equina",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Taladradora",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Excavar",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Pataleta",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Terratemblor",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Bucle Arena",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Fisura",
+        "type": "tierra",
+        "category": "físico"
+      },
+      {
+        "name": "Tierra Viva",
+        "type": "tierra",
+        "category": "especial"
+      },
+      {
+        "name": "Arenas Ardientes",
+        "type": "tierra",
+        "category": "especial"
+      },
+      {
+        "name": "Colmillo Hielo",
+        "type": "hielo",
+        "category": "físico"
+      },
+      {
+        "name": "Plancha Corporal",
+        "type": "lucha",
+        "category": "físico"
+      },
+      {
+        "name": "Psicocolmillo",
+        "type": "psíquico",
+        "category": "físico"
+      },
+      {
+        "name": "Descanso",
+        "type": "psíquico",
+        "category": "estado"
+      },
+      {
+        "name": "Maldición",
+        "type": "fantasma",
+        "category": "estado"
+      },
+      {
+        "name": "Vasto Impacto",
+        "type": "dragón",
+        "category": "físico"
+      },
+      {
+        "name": "Cola Dragón",
+        "type": "dragón",
+        "category": "físico"
+      },
+      {
+        "name": "Pulso Dragón",
+        "type": "dragón",
+        "category": "especial"
+      },
+      {
+        "name": "Danza Dragón",
+        "type": "dragón",
+        "category": "estado"
+      },
+      {
+        "name": "Triturar",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Giro Vil",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Vendetta",
+        "type": "siniestro",
+        "category": "físico"
+      },
+      {
+        "name": "Pulso Umbrío",
+        "type": "siniestro",
+        "category": "especial"
+      },
+      {
+        "name": "Mofa",
+        "type": "siniestro",
+        "category": "estado"
+      },
+      {
+        "name": "Allanador Férreo",
+        "type": "acero",
+        "category": "físico"
+      },
+      {
+        "name": "Cola Férrea",
+        "type": "acero",
+        "category": "físico"
+      },
+      {
+        "name": "Cabeza de Hierro",
+        "type": "acero",
+        "category": "físico"
+      },
+      {
+        "name": "Cuerpo Pesado",
+        "type": "acero",
+        "category": "físico"
+      },
+      {
+        "name": "Giro Bola",
+        "type": "acero",
+        "category": "físico"
+      },
+      {
+        "name": "Metaláser",
+        "type": "acero",
+        "category": "especial"
+      },
+      {
+        "name": "Cañón Resplandor",
+        "type": "acero",
+        "category": "especial"
+      },
+      {
+        "name": "Defensa Férrea",
+        "type": "acero",
+        "category": "estado"
+      }
+    ]
+  }
+}
