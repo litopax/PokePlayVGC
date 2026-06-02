@@ -640,7 +640,8 @@ function renderEditor() {
           <option${p.gender==='F'?' selected':''} value="F">♀</option>
           <option${p.gender===''?' selected':''} value="">—</option>
         </select>
-        <button class="btn btn-danger btn-xs" onclick="handleRemovePokemon(${state.activeSlotIdx})" style="margin-top:8px;width:100%">Quitar</button>
+        <button class="btn btn-primary btn-xs" onclick="closeEditor()" style="margin-top:8px;width:100%">✓ Listo</button>
+        <button class="btn btn-danger btn-xs" onclick="handleRemovePokemon(${state.activeSlotIdx})" style="margin-top:4px;width:100%">✕ Quitar</button>
       </div>
 
       <!-- CENTER: fields + moves -->
@@ -698,9 +699,9 @@ function renderEditor() {
             <input class="sd-ev-input" type="number" min="0" max="${EV_STAT_MAX}" value="${p.evs[s]}"
               oninput="updateEV('${s}',parseInt(this.value)||0)">
             <span class="sd-stat-val ${cls}" data-stat="${s}">${statVal}</span>
-            <div class="sd-ev-bar" data-ev-stat="${s}" onclick="handleEvTrackClick(event,'${s}')">
-              <div class="sd-ev-fill${p.evs[s]>=EV_STAT_MAX?' maxed':''}" style="width:${(p.evs[s]/EV_STAT_MAX)*100}%"></div>
-            </div>
+            <input class="sd-ev-slider" type="range" min="0" max="${EV_STAT_MAX}" step="1"
+              value="${p.evs[s]}" data-ev-stat="${s}"
+              oninput="updateEV('${s}',parseInt(this.value)||0)">
           </div>`;
         }).join('')}
         <div class="sd-ev-presets">
@@ -712,6 +713,15 @@ function renderEditor() {
     </div>`;
 
   setupEditorAutocompletes(p);
+  // Init slider track colors
+  STATS.forEach(s => {
+    const sl = document.querySelector(`.sd-ev-slider[data-ev-stat="${s}"]`);
+    if (sl) {
+      const pct = (p.evs[s] / EV_STAT_MAX) * 100;
+      const color = p.evs[s] >= EV_STAT_MAX ? 'var(--gold)' : 'var(--red)';
+      sl.style.background = `linear-gradient(to right, ${color} ${pct}%, var(--bg-hover, #333) ${pct}%)`;
+    }
+  });
 }
 
 function setupEditorAutocompletes(p) {
@@ -863,11 +873,13 @@ window.updateEV = (stat, value) => {
     totalEl.textContent = `${total}/${EV_TOTAL_MAX}`;
     totalEl.className = `ev-total ${total>EV_TOTAL_MAX?'over':'ok'}`;
   }
-  // Update bar fill (new sd- layout)
-  const bar = document.querySelector(`[data-ev-stat="${stat}"] .sd-ev-fill`);
-  if (bar) {
-    bar.style.width = `${(p.evs[stat]/EV_STAT_MAX)*100}%`;
-    bar.className = `sd-ev-fill${p.evs[stat]>=EV_STAT_MAX?' maxed':''}`;
+  // Sync slider + update track color
+  const slider = document.querySelector(`.sd-ev-slider[data-ev-stat="${stat}"]`);
+  if (slider) {
+    if (parseInt(slider.value) !== p.evs[stat]) slider.value = p.evs[stat];
+    const pct = (p.evs[stat] / EV_STAT_MAX) * 100;
+    const color = p.evs[stat] >= EV_STAT_MAX ? 'var(--gold)' : 'var(--red)';
+    slider.style.background = `linear-gradient(to right, ${color} ${pct}%, var(--bg-hover, #333) ${pct}%)`;
   }
   // Update stat value display
   const nm = getNatureMods(p.nature);
@@ -878,10 +890,7 @@ window.updateEV = (stat, value) => {
   if (evInput && parseInt(evInput.value) !== p.evs[stat]) evInput.value = p.evs[stat];
 };
 
-window.handleEvTrackClick = (e, stat) => {
-  const r = e.currentTarget.getBoundingClientRect();
-  updateEV(stat, Math.max(0, Math.min(EV_STAT_MAX, Math.round((e.clientX-r.left)/r.width*EV_STAT_MAX))));
-};
+window.handleEvTrackClick = () => {}; // replaced by slider
 
 window.spreadEVs = () => { const p = getActivePokemon(); if (!p) return; STATS.forEach(s => p.evs[s]=0); p.evs.Atk=32; p.evs.Spe=32; p.evs.HP=2; renderEditor(); };
 window.spreadEVsSpecial = () => { const p = getActivePokemon(); if (!p) return; STATS.forEach(s => p.evs[s]=0); p.evs.SpA=32; p.evs.Spe=32; p.evs.HP=2; renderEditor(); };
