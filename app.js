@@ -17,6 +17,10 @@ const NATURE_EFFECTS = {
 
 const STATS = ['HP','Atk','Def','SpA','SpD','Spe'];
 
+// Champions EV system: 66 total, max 32 per stat, each point = +1 to that stat
+const EV_TOTAL_MAX = 66;
+const EV_STAT_MAX = 32;
+
 const TYPE_COLORS = {
   normal:'#A8A878',fire:'#F08030',water:'#6890F0',electric:'#F8D030',grass:'#78C850',
   ice:'#98D8D8',fighting:'#C03028',poison:'#A040A0',ground:'#E0C068',flying:'#A890F0',
@@ -24,21 +28,32 @@ const TYPE_COLORS = {
   dark:'#705848',steel:'#B8B8D0',fairy:'#EE99AC',stellar:'#40B5A5'
 };
 
-const TYPES = ['Normal','Fire','Water','Electric','Grass','Ice','Fighting','Poison',
-  'Ground','Flying','Psychic','Bug','Rock','Ghost','Dragon','Dark','Steel','Fairy','Stellar'];
-
-const FORMAT_NAME = 'VGC 2026 – Reg. M-A';
-const FORMAT_SHORT = 'Reg. M-A';
+const FORMAT_NAME = 'Pokémon Champions – Lv 50';
+const FORMAT_SHORT = 'Champions';
 
 const ITEMS = [
+  // Mega Stones
+  'Abomasite','Absolite','Aerodactylite','Aggronite','Alakazite','Altarianite','Ampharosite',
+  'Audinite','Banettite','Beedrillite','Blastoisinite','Blazikenite','Cameruptite',
+  'Charizardite X','Charizardite Y','Diancite','Galladite','Garchompite','Gardevoirite',
+  'Gengarite','Glalitite','Gyaradosite','Heracronite','Houndoominite','Kangaskhanite',
+  'Latiasite','Latiosite','Lopunnite','Lucarionite','Manectite','Mawilite','Medichamite',
+  'Metagrossite','Mewtwonite X','Mewtwonite Y','Pidgeotite','Pinsirite','Sablenite',
+  'Salamencite','Sceptilite','Scizorite','Sharpedonite','Slowbronite','Steelixite',
+  'Swampertite','Tyranitarite','Venusaurite',
+  // Z-Crystals
+  'Buginium Z','Darkinium Z','Dragonium Z','Electrium Z','Fairium Z','Fightinium Z',
+  'Firium Z','Flyinium Z','Ghostium Z','Grassium Z','Groundium Z','Icium Z',
+  'Normalium Z','Poisonium Z','Psychium Z','Rockium Z','Steelium Z','Tapunium Z','Waterium Z',
+  // Regular competitive items
   'Ability Shield','Assault Vest','Berry Juice','Black Glasses','Booster Energy',
   'Bright Powder','Choice Band','Choice Scarf','Choice Specs','Clear Amulet',
-  'Covert Cloak','Dragon Fang','Eject Button','Eject Pack','Escape Button',
+  'Covert Cloak','Dragon Fang','Eject Button','Eject Pack',
   'Expert Belt','Focus Sash','Grassy Seed','Heavy-Duty Boots','Helping Hand',
-  'King\'s Rock','Lax Incense','Leftovers','Life Orb','Light Clay','Lum Berry',
+  "King's Rock",'Lax Incense','Leftovers','Life Orb','Light Clay','Lum Berry',
   'Mental Herb','Metal Coat','Metronome','Miracle Seed','Misty Seed','Muscle Band',
   'Never-Melt Ice','Occa Berry','Passho Berry','Payapa Berry','Power Herb',
-  'Quick Claw','Rage Candy Bar','Rocky Helmet','Room Service','Rindo Berry',
+  'Quick Claw','Rocky Helmet','Room Service','Rindo Berry',
   'Safety Goggles','Shell Bell','Shed Shell','Sitrus Berry','Soft Sand','Spell Tag',
   'Terrain Extender','Toxic Orb','Twisted Spoon','Wacan Berry','White Herb','Wide Lens',
   'Yache Berry','Aguav Berry','Black Belt','Black Sludge','Chesto Berry','Coba Berry',
@@ -50,16 +65,44 @@ const ITEMS = [
   'Persim Berry','Pecha Berry','Rawst Berry','Mago Berry','Iapapa Berry','Wiki Berry'
 ].sort();
 
+// ─── STAT CALCULATION ─────────────────────────────────────────
+// Champions: stat = floor(base * level / 50) + EV bonus (each EV = +1)
+// HP formula differs from standard, but we'll use standard Lv50 approximation + EV as flat bonus
+function calcStat(base, ev, isHP, nature = null) {
+  const level = 50;
+  let stat;
+  if (isHP) {
+    stat = Math.floor((2 * base * level) / 100) + level + 10 + ev;
+  } else {
+    stat = Math.floor((2 * base * level) / 100) + 5 + ev;
+    if (nature) {
+      if (nature.startsWith('+')) stat = Math.floor(stat * 1.1);
+      else if (nature.startsWith('-')) stat = Math.floor(stat * 0.9);
+    }
+  }
+  return stat;
+}
+
+function getNatureModifiers(natureName) {
+  const effect = NATURE_EFFECTS[natureName] || '';
+  const mods = {};
+  STATS.forEach(s => mods[s] = null);
+  if (!effect) return mods;
+  const plusMatch = effect.match(/\+(\w+)/);
+  const minusMatch = effect.match(/-(\w+)/);
+  if (plusMatch) mods[plusMatch[1]] = '+';
+  if (minusMatch) mods[minusMatch[1]] = '-';
+  return mods;
+}
+
 // ─── STATE ───────────────────────────────────────────────────
 let state = {
   user: null,
   teams: [],
   activeTeamId: null,
   activeSlotIdx: null,
-  // No more editorTab — only Main (with EVs inline)
 };
 
-// ─── POKEMON DATA CACHE ───────────────────────────────────────
 const POKEMON_CACHE = {};
 
 function getActiveTeam() { return state.teams.find(t => t.id === state.activeTeamId) || null; }
@@ -73,9 +116,10 @@ function makePokemon(name = '') {
   return {
     name, nickname: '', item: '', ability: '', nature: 'Jolly',
     shiny: false, gender: 'M', level: 50,
-    teraType: '', moves: ['','','',''],
+    moves: ['','','',''],
     evs: { HP:0, Atk:0, Def:0, SpA:0, SpD:0, Spe:0 },
-    types: [], sprite: '', abilities: [], legalMoves: []
+    types: [], sprite: '', abilities: [], legalMoves: [],
+    baseStats: null
   };
 }
 
@@ -168,16 +212,15 @@ async function deleteTeam(id) {
   toast('Team deleted', 'info');
 }
 
-// ─── IMPORT/EXPORT (Showdown format) ─────────────────────────
+// ─── IMPORT/EXPORT ────────────────────────────────────────────
 function exportTeam(team) {
   return team.pokemon.map(p => {
     if (!p.name) return '';
     const display = p.nickname ? `${p.nickname} (${p.name})` : p.name;
     const lines = [display + (p.gender ? ` (${p.gender})` : '') + (p.item ? ` @ ${p.item}` : '')];
     if (p.ability) lines.push(`Ability: ${p.ability}`);
-    if (p.level && p.level !== 50) lines.push(`Level: ${p.level}`);
+    lines.push(`Level: 50`);
     if (p.shiny) lines.push('Shiny: Yes');
-    if (p.teraType) lines.push(`Tera Type: ${p.teraType}`);
     const evArr = STATS.filter(s => p.evs[s] > 0).map(s => `${p.evs[s]} ${s}`);
     if (evArr.length) lines.push(`EVs: ${evArr.join(' / ')}`);
     if (p.nature) lines.push(`${p.nature} Nature`);
@@ -200,18 +243,17 @@ function importTeam(text) {
     }
     lines.slice(1).forEach(line => {
       if (line.startsWith('Ability:')) p.ability = line.replace('Ability:','').trim();
-      else if (line.startsWith('Level:')) p.level = parseInt(line.replace('Level:','').trim()) || 50;
       else if (line.startsWith('Shiny: Yes')) p.shiny = true;
-      else if (line.startsWith('Tera Type:')) p.teraType = line.replace('Tera Type:','').trim();
       else if (line.startsWith('EVs:')) line.replace('EVs:','').trim().split('/').forEach(part => { const m = part.trim().match(/(\d+)\s+(\w+)/); if (m && p.evs[m[2]] !== undefined) p.evs[m[2]] = parseInt(m[1]); });
       else if (line.match(/Nature$/)) p.nature = line.replace('Nature','').trim();
       else if (line.startsWith('- ')) { const mi = p.moves.indexOf(''); if (mi !== -1) p.moves[mi] = line.replace('- ','').trim(); }
     });
+    p.level = 50;
     return p;
   }).filter(p => p.name);
 }
 
-// ─── IMPORT/EXPORT MODALS ─────────────────────────────────────
+// ─── MODALS ───────────────────────────────────────────────────
 window.openImportModal = () => {
   document.getElementById('import-modal-textarea').value = '';
   document.getElementById('import-modal').classList.add('open');
@@ -219,8 +261,7 @@ window.openImportModal = () => {
 window.closeImportModal = () => document.getElementById('import-modal').classList.remove('open');
 
 window.openExportModal = () => {
-  const team = getActiveTeam();
-  if (!team) return;
+  const team = getActiveTeam(); if (!team) return;
   document.getElementById('export-modal-textarea').value = exportTeam(team);
   document.getElementById('export-modal').classList.add('open');
 };
@@ -236,7 +277,7 @@ window.doImport = async () => {
   await Promise.all(team.pokemon.map(async p => {
     if (p.name) {
       const data = await fetchPokemonData(p.name);
-      if (data) { p.types = data.types; p.sprite = data.sprite; p.shinySprite = data.shinySprite; p.abilities = data.abilities; p.legalMoves = data.legalMoves; }
+      if (data) { p.types = data.types; p.sprite = data.sprite; p.shinySprite = data.shinySprite; p.abilities = data.abilities; p.legalMoves = data.legalMoves; p.baseStats = data.baseStats; }
     }
   }));
   state.activeSlotIdx = null;
@@ -251,15 +292,12 @@ window.copyExportModal = () => {
 };
 
 // ─── AUTOCOMPLETE ─────────────────────────────────────────────
-let acDropdownEl = null;
-
 function createACDropdown() {
   if (document.getElementById('ac-dropdown')) return;
   const el = document.createElement('div');
   el.id = 'ac-dropdown';
   el.className = 'ac-dropdown';
   document.body.appendChild(el);
-  acDropdownEl = el;
 }
 
 function positionDropdown(inputEl) {
@@ -268,7 +306,8 @@ function positionDropdown(inputEl) {
   if (!dd) return;
   dd.style.left = rect.left + 'px';
   dd.style.top = (rect.bottom + 2) + 'px';
-  dd.style.width = Math.max(rect.width, 200) + 'px';
+  dd.style.width = rect.width + 'px';
+  // don't set right — let width control it
 }
 
 function showDropdown(inputEl, items, onSelect, selectedIdx = 0) {
@@ -277,8 +316,8 @@ function showDropdown(inputEl, items, onSelect, selectedIdx = 0) {
   if (!items.length) { hideDropdown(); return; }
   dd.innerHTML = items.slice(0,12).map((item, i) => {
     const label = typeof item === 'object' ? item.label : item;
-    const sub = typeof item === 'object' && item.sub ? `<span class="ac-sub">${item.sub}</span>` : '';
-    return `<div class="ac-item ${i === selectedIdx ? 'ac-selected' : ''}" data-idx="${i}">${escHtml(label)}${sub}</div>`;
+    const sub = typeof item === 'object' && item.sub ? `<span class="ac-sub">${escHtml(item.sub)}</span>` : '';
+    return `<div class="ac-item${i === selectedIdx ? ' ac-selected' : ''}" data-idx="${i}">${escHtml(label)}${sub}</div>`;
   }).join('');
   positionDropdown(inputEl);
   dd.style.display = 'block';
@@ -309,9 +348,9 @@ function setupAutocomplete(inputEl, getItems, onSelect, opts = {}) {
     currentItems = await getItems(val);
     selectedIdx = currentItems.length > 0 ? 0 : -1;
     showDropdown(inputEl, currentItems, item => {
-      const val = typeof item === 'object' ? item.label : item;
-      inputEl.value = val;
-      onSelect(val, item);
+      const v = typeof item === 'object' ? item.label : item;
+      inputEl.value = v;
+      onSelect(v, item);
       hideDropdown();
       selectedIdx = -1;
     }, selectedIdx);
@@ -321,120 +360,68 @@ function setupAutocomplete(inputEl, getItems, onSelect, opts = {}) {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => refresh(inputEl.value), opts.debounce || 120);
   });
-
   inputEl.addEventListener('focus', () => refresh(inputEl.value));
-
   inputEl.addEventListener('keydown', e => {
     const dd = document.getElementById('ac-dropdown');
     if (!dd || dd.style.display === 'none') {
       if (e.key === 'ArrowDown' || e.key === 'Enter') refresh(inputEl.value);
       return;
     }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      selectedIdx = Math.min(selectedIdx + 1, Math.min(currentItems.length, 12) - 1);
-      updateDropdownSelection(selectedIdx);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      selectedIdx = Math.max(selectedIdx - 1, 0);
-      updateDropdownSelection(selectedIdx);
-    } else if (e.key === 'Enter' || e.key === 'Tab') {
+    if (e.key === 'ArrowDown') { e.preventDefault(); selectedIdx = Math.min(selectedIdx+1, Math.min(currentItems.length,12)-1); updateDropdownSelection(selectedIdx); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); selectedIdx = Math.max(selectedIdx-1, 0); updateDropdownSelection(selectedIdx); }
+    else if (e.key === 'Enter' || e.key === 'Tab') {
       if (selectedIdx >= 0 && currentItems[selectedIdx]) {
         e.preventDefault();
         const item = currentItems[selectedIdx];
-        const val = typeof item === 'object' ? item.label : item;
-        inputEl.value = val;
-        onSelect(val, item);
-        hideDropdown();
-        selectedIdx = -1;
+        const v = typeof item === 'object' ? item.label : item;
+        inputEl.value = v; onSelect(v, item); hideDropdown(); selectedIdx = -1;
       }
-    } else if (e.key === 'Escape') {
-      hideDropdown();
-    }
+    } else if (e.key === 'Escape') hideDropdown();
   });
-
   inputEl.addEventListener('blur', () => setTimeout(hideDropdown, 150));
 }
 
 function setupItemAC(inputEl) {
-  setupAutocomplete(inputEl,
-    async (val) => {
-      const v = val.toLowerCase();
-      const exact = ITEMS.filter(i => i.toLowerCase().startsWith(v));
-      const fuzzy = ITEMS.filter(i => !i.toLowerCase().startsWith(v) && i.toLowerCase().includes(v));
-      return [...exact, ...fuzzy].slice(0, 12);
-    },
-    (val) => { const p = getActivePokemon(); if (p) p.item = val; }
-  );
+  setupAutocomplete(inputEl, async (val) => {
+    const v = val.toLowerCase();
+    const exact = ITEMS.filter(i => i.toLowerCase().startsWith(v));
+    const fuzzy = ITEMS.filter(i => !i.toLowerCase().startsWith(v) && i.toLowerCase().includes(v));
+    return [...exact, ...fuzzy].slice(0, 12);
+  }, (val) => { const p = getActivePokemon(); if (p) p.item = val; });
 }
 
 function setupNatureAC(inputEl) {
-  setupAutocomplete(inputEl,
-    async (val) => {
-      const v = val.toLowerCase();
-      const all = NATURES.map(n => ({ label: n, sub: NATURE_EFFECTS[n] || 'Neutral' }));
-      const exact = all.filter(n => n.label.toLowerCase().startsWith(v));
-      const fuzzy = all.filter(n => !n.label.toLowerCase().startsWith(v) && n.label.toLowerCase().includes(v));
-      return [...exact, ...fuzzy];
-    },
-    (val) => { const p = getActivePokemon(); if (p) p.nature = val; }
-  );
+  setupAutocomplete(inputEl, async (val) => {
+    const v = val.toLowerCase();
+    const all = NATURES.map(n => ({ label: n, sub: NATURE_EFFECTS[n] || 'Neutral' }));
+    const exact = all.filter(n => n.label.toLowerCase().startsWith(v));
+    const fuzzy = all.filter(n => !n.label.toLowerCase().startsWith(v) && n.label.toLowerCase().includes(v));
+    return [...exact, ...fuzzy];
+  }, (val) => { const p = getActivePokemon(); if (p) { p.nature = val; renderEditor(); } });
 }
 
 function setupAbilityAC(inputEl, abilities) {
-  setupAutocomplete(inputEl,
-    async (val) => {
-      const v = val.toLowerCase();
-      if (!abilities || abilities.length === 0) return [];
-      const items = abilities.map(a => ({
-        label: typeof a === 'object' ? a.name : a,
-        sub: typeof a === 'object' && a.hidden ? 'Hidden' : ''
-      }));
-      const exact = items.filter(i => i.label.toLowerCase().startsWith(v));
-      const rest = items.filter(i => !i.label.toLowerCase().startsWith(v));
-      return [...exact, ...rest];
-    },
-    (val) => { const p = getActivePokemon(); if (p) p.ability = val; }
-  );
+  setupAutocomplete(inputEl, async (val) => {
+    const v = val.toLowerCase();
+    const items = abilities.map(a => ({ label: typeof a === 'object' ? a.name : a, sub: typeof a === 'object' && a.hidden ? 'Hidden' : '' }));
+    return [...items.filter(i => i.label.toLowerCase().startsWith(v)), ...items.filter(i => !i.label.toLowerCase().startsWith(v))];
+  }, (val) => { const p = getActivePokemon(); if (p) p.ability = val; });
 }
 
 function setupPokemonAC(inputEl) {
-  setupAutocomplete(inputEl,
-    async (val) => {
-      if (!val || val.length < 1) return [];
-      const list = await getAllPokemonList();
-      const v = val.toLowerCase();
-      const exact = list.filter(p => p.toLowerCase().startsWith(v));
-      const fuzzy = list.filter(p => !p.toLowerCase().startsWith(v) && p.toLowerCase().includes(v));
-      return [...exact, ...fuzzy].slice(0, 12);
-    },
-    (val) => handlePokemonNameChange(val),
-    { debounce: 80 }
-  );
+  setupAutocomplete(inputEl, async (val) => {
+    if (!val || val.length < 1) return [];
+    const list = await getAllPokemonList();
+    const v = val.toLowerCase();
+    return [...list.filter(p => p.toLowerCase().startsWith(v)), ...list.filter(p => !p.toLowerCase().startsWith(v) && p.toLowerCase().includes(v))].slice(0, 12);
+  }, (val) => handlePokemonNameChange(val), { debounce: 80 });
 }
 
 function setupMoveAC(inputEl, moveIdx, legalMoves) {
-  setupAutocomplete(inputEl,
-    async (val) => {
-      const v = val.toLowerCase();
-      const legalFiltered = (legalMoves || [])
-        .filter(m => !v || m.toLowerCase().includes(v))
-        .map(m => ({ label: m, legal: true }));
-      return legalFiltered.slice(0, 12);
-    },
-    (val) => { const p = getActivePokemon(); if (p) p.moves[moveIdx] = val; },
-    { debounce: 80 }
-  );
-}
-
-function setupTeraAC(inputEl) {
-  setupAutocomplete(inputEl,
-    async (val) => {
-      const v = val.toLowerCase();
-      return TYPES.filter(t => t.toLowerCase().startsWith(v) || t.toLowerCase().includes(v));
-    },
-    (val) => { const p = getActivePokemon(); if (p) p.teraType = val; }
-  );
+  setupAutocomplete(inputEl, async (val) => {
+    const v = val.toLowerCase();
+    return (legalMoves || []).filter(m => !v || m.toLowerCase().includes(v)).map(m => ({ label: m })).slice(0, 12);
+  }, (val) => { const p = getActivePokemon(); if (p) p.moves[moveIdx] = val; }, { debounce: 80 });
 }
 
 // ─── RENDER ───────────────────────────────────────────────────
@@ -447,14 +434,14 @@ function renderSidebar() {
   list.innerHTML = state.teams.map(team => {
     const isActive = team.id === state.activeTeamId;
     const count = team.pokemon.filter(p => p && p.name).length;
-    return `<div class="team-item ${isActive ? 'active' : ''}" data-id="${team.id}" onclick="handleTeamSelect('${team.id}')">
+    return `<div class="team-item ${isActive?'active':''}" onclick="handleTeamSelect('${team.id}')">
       <div class="team-item-icon">⚔️</div>
       <div class="team-item-info">
         <div class="team-item-name">${escHtml(team.name)}</div>
         <div class="team-item-meta">${FORMAT_SHORT} · ${count}/6</div>
       </div>
       <div class="team-item-actions">
-        <button class="btn btn-icon btn-danger" onclick="handleDeleteTeam('${team.id}',event)" title="Eliminar">🗑</button>
+        <button class="btn btn-icon btn-danger" onclick="handleDeleteTeam('${team.id}',event)">🗑</button>
       </div>
     </div>`;
   }).join('');
@@ -468,7 +455,7 @@ function renderContent() {
     content.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🏆</div><h3>NINGÚN EQUIPO<br>SELECCIONADO</h3><p>Crea un equipo desde el sidebar.</p></div>`;
     return;
   }
-  const slots = Array.from({length: 6}, (_, i) => {
+  const slots = Array.from({length:6}, (_,i) => {
     const p = team.pokemon[i];
     return (p && p.name) ? renderFilledSlot(p, i) : `
       <div class="pokemon-slot empty" onclick="handleAddPokemon(${i})">
@@ -476,12 +463,10 @@ function renderContent() {
       </div>`;
   });
 
-  // Editor goes ABOVE grid
   content.innerHTML = `
     <div class="team-header">
       <div class="team-name-row">
-        <input class="team-name-input" value="${escHtml(team.name)}" placeholder="Nombre del equipo"
-          onchange="handleTeamNameChange(this.value)">
+        <input class="team-name-input" value="${escHtml(team.name)}" placeholder="Nombre del equipo" onchange="handleTeamNameChange(this.value)">
         <span class="format-badge">${FORMAT_NAME}</span>
       </div>
       <div class="team-actions">
@@ -501,34 +486,33 @@ function renderFilledSlot(p, idx) {
   const typeBar = p.types.length
     ? `background:linear-gradient(90deg,${p.types.map((t,i)=>`${TYPE_COLORS[t]||'#888'} ${i*50}%`).join(',')})`
     : 'background:var(--border)';
+  const evTotal = Object.values(p.evs).reduce((a,b)=>a+b,0);
   const evPips = STATS.map(s => {
-    const pct = (p.evs[s]||0)/252;
-    return `<div class="ev-pip" style="opacity:${0.15+pct*0.85};background:${pct>0.9?'var(--gold)':'var(--red)'}"></div>`;
+    const pct = (p.evs[s]||0)/EV_STAT_MAX;
+    return `<div class="ev-pip" style="opacity:${0.15+pct*0.85};background:${pct>=1?'var(--gold)':'var(--red)'}"></div>`;
   }).join('');
   return `<div class="pokemon-slot${isActive?' active':''}" onclick="handleSlotClick(${idx})">
     <div class="slot-type-bar" style="${typeBar}"></div>
     <div class="slot-header">
       <div class="slot-sprite-wrap">
-        ${p.sprite ? `<img class="slot-sprite" src="${p.shiny ? (p.shinySprite||p.sprite) : p.sprite}" alt="${p.name}" loading="lazy">`
-          : '<div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:24px">🔴</div>'}
+        ${p.sprite?`<img class="slot-sprite" src="${p.shiny?(p.shinySprite||p.sprite):p.sprite}" alt="${p.name}" loading="lazy">`
+          :'<div style="width:56px;height:56px;display:flex;align-items:center;justify-content:center;font-size:24px">🔴</div>'}
       </div>
       <div class="slot-info">
         <div class="slot-name">${p.nickname||p.name}${p.shiny?' <span class="shiny-star">✦</span>':''}</div>
         <div class="slot-types">
           ${p.types.map(t=>`<span class="type-chip" style="background:${TYPE_COLORS[t]||'#888'}">${t}</span>`).join('')}
-          ${p.teraType?`<span class="tera-badge">◈ ${p.teraType}</span>`:''}
         </div>
         ${p.item?`<div class="slot-item">⚙ ${escHtml(p.item)}</div>`:''}
       </div>
-      <button class="btn btn-icon btn-danger" style="position:absolute;top:6px;right:6px"
-        onclick="handleRemovePokemon(${idx},event)">✕</button>
+      <button class="btn btn-icon btn-danger" style="position:absolute;top:6px;right:6px" onclick="handleRemovePokemon(${idx},event)">✕</button>
     </div>
     <div class="slot-moves">
       ${p.moves.map(m=>`<div class="move-chip">${m||'—'}</div>`).join('')}
     </div>
     <div class="slot-footer">
       <div class="ev-mini">${evPips}</div>
-      <span class="nature-tag">${p.nature} · Lv${p.level}</span>
+      <span class="nature-tag">${p.nature} · ${evTotal}pts</span>
     </div>
   </div>`;
 }
@@ -540,6 +524,9 @@ function renderEditor() {
   if (!p) { container.innerHTML = ''; return; }
 
   const total = Object.values(p.evs).reduce((a,b)=>a+b,0);
+  const remaining = EV_TOTAL_MAX - total;
+  const natureMods = getNatureModifiers(p.nature);
+  const bs = p.baseStats;
 
   container.innerHTML = `
     <div class="editor-panel">
@@ -552,7 +539,7 @@ function renderEditor() {
         <div class="editor-top">
           <div class="editor-sprite-zone">
             ${p.sprite
-              ? `<img class="editor-sprite" src="${p.shiny&&p.shinySprite ? p.shinySprite : p.sprite}" alt="${p.name}">`
+              ? `<img class="editor-sprite" src="${p.shiny&&p.shinySprite?p.shinySprite:p.sprite}" alt="${p.name}">`
               : `<div class="sprite-placeholder">🔴</div>`}
             <label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;font-size:12px;color:var(--text-muted);justify-content:center">
               <input type="checkbox" ${p.shiny?'checked':''} onchange="updatePokemonField('shiny',this.checked);renderContent()"> <span class="shiny-star">✦</span> Shiny
@@ -565,8 +552,7 @@ function renderEditor() {
             </div>
             <div class="field-group">
               <label class="field-label">Apodo</label>
-              <input class="field-input" value="${escHtml(p.nickname)}" placeholder="Opcional"
-                oninput="updatePokemonFieldSilent('nickname',this.value)">
+              <input class="field-input" value="${escHtml(p.nickname)}" placeholder="Opcional" oninput="updatePokemonFieldSilent('nickname',this.value)">
             </div>
             <div class="field-group">
               <label class="field-label">Género</label>
@@ -582,20 +568,11 @@ function renderEditor() {
             </div>
             <div class="field-group">
               <label class="field-label">Habilidad</label>
-              <input id="ac-ability" class="field-input" value="${escHtml(p.ability)}" placeholder="${p.abilities.length ? 'Seleccionar' : 'Elige un Pokémon primero'}" autocomplete="off" ${!p.abilities.length ? 'readonly' : ''}>
+              <input id="ac-ability" class="field-input" value="${escHtml(p.ability)}" placeholder="${p.abilities.length?'Seleccionar':'Elige un Pokémon primero'}" autocomplete="off" ${!p.abilities.length?'readonly':''}>
             </div>
             <div class="field-group">
               <label class="field-label">Naturaleza</label>
               <input id="ac-nature" class="field-input" value="${escHtml(p.nature)}" placeholder="ej. Jolly" autocomplete="off">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Tipo Tera</label>
-              <input id="ac-tera" class="field-input" value="${escHtml(p.teraType)}" placeholder="ej. Fire" autocomplete="off">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Nivel</label>
-              <input class="field-input" type="number" min="1" max="100" value="${p.level||50}"
-                oninput="updatePokemonFieldSilent('level',parseInt(this.value)||50)">
             </div>
           </div>
         </div>
@@ -603,7 +580,7 @@ function renderEditor() {
         <div class="moves-section">
           <div class="section-label">Movimientos</div>
           <div class="moves-grid">
-            ${p.moves.map((m,i) => `
+            ${p.moves.map((m,i)=>`
               <div class="move-input-wrap">
                 <span class="move-num">${i+1}</span>
                 <input id="ac-move-${i}" class="move-input" value="${escHtml(m)}" placeholder="Movimiento ${i+1}" autocomplete="off">
@@ -613,21 +590,27 @@ function renderEditor() {
 
         <div class="evs-section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-            <div class="section-label">EVs</div>
-            <span class="ev-total ${total>510?'over':'ok'}">${total}/510</span>
+            <div class="section-label">Puntos de esfuerzo</div>
+            <span class="ev-total ${total>EV_TOTAL_MAX?'over':'ok'}">${total}/${EV_TOTAL_MAX} <span style="color:var(--text-muted);font-size:10px">(${remaining>=0?remaining:0} restantes)</span></span>
           </div>
-          ${STATS.map(s=>`
+          ${STATS.map(s => {
+            const natMod = natureMods[s];
+            const statVal = bs ? calcStat(bs[s], p.evs[s], s==='HP', natMod) : '—';
+            const natClass = natMod==='+' ? 'stat-plus' : natMod==='-' ? 'stat-minus' : '';
+            return `
             <div class="ev-row">
-              <span class="ev-stat-name">${s}</span>
+              <span class="ev-stat-name ${natClass}">${s}</span>
               <div class="ev-track" data-ev-stat="${s}" onclick="handleEvTrackClick(event,'${s}')">
-                <div class="ev-fill${p.evs[s]>=252?' maxed':''}" style="width:${(p.evs[s]/252)*100}%"></div>
+                <div class="ev-fill${p.evs[s]>=EV_STAT_MAX?' maxed':''}" style="width:${(p.evs[s]/EV_STAT_MAX)*100}%"></div>
               </div>
-              <input class="ev-input" type="number" min="0" max="252" value="${p.evs[s]}"
+              <input class="ev-input" type="number" min="0" max="${EV_STAT_MAX}" value="${p.evs[s]}"
                 oninput="updateEV('${s}',parseInt(this.value)||0)">
-            </div>`).join('')}
+              <span class="stat-final ${natClass}">${statVal}</span>
+            </div>`;
+          }).join('')}
           <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-            <button class="btn btn-ghost btn-sm" onclick="spreadEVs()">252 Atk/Spe</button>
-            <button class="btn btn-ghost btn-sm" onclick="spreadEVsSpecial()">252 SpA/Spe</button>
+            <button class="btn btn-ghost btn-sm" onclick="spreadEVs()">Atk/Spe</button>
+            <button class="btn btn-ghost btn-sm" onclick="spreadEVsSpecial()">SpA/Spe</button>
             <button class="btn btn-ghost btn-sm" onclick="clearEVs()">Limpiar</button>
           </div>
         </div>
@@ -642,37 +625,36 @@ function setupEditorAutocompletes(p) {
   const itemEl = document.getElementById('ac-item');
   const abilityEl = document.getElementById('ac-ability');
   const natureEl = document.getElementById('ac-nature');
-  const teraEl = document.getElementById('ac-tera');
 
   if (nameEl) setupPokemonAC(nameEl);
   if (itemEl) setupItemAC(itemEl);
   if (abilityEl && p.abilities.length) setupAbilityAC(abilityEl, p.abilities);
   if (natureEl) setupNatureAC(natureEl);
-  if (teraEl) setupTeraAC(teraEl);
 
-  p.moves.forEach((_, i) => {
-    const moveEl = document.getElementById(`ac-move-${i}`);
-    if (moveEl) setupMoveAC(moveEl, i, p.legalMoves);
+  p.moves.forEach((_,i) => {
+    const el = document.getElementById(`ac-move-${i}`);
+    if (el) setupMoveAC(el, i, p.legalMoves);
   });
 }
 
 // ─── EVENT HANDLERS ───────────────────────────────────────────
 window.handleTeamSelect = (id) => { state.activeTeamId = id; state.activeSlotIdx = null; renderAll(); };
 window.handleDeleteTeam = (id, e) => { e?.stopPropagation(); if (confirm('¿Eliminar este equipo?')) deleteTeam(id); };
+
 window.handleSlotClick = (idx) => {
   state.activeSlotIdx = state.activeSlotIdx === idx ? null : idx;
-  // Targeted re-render: update slot active states + editor only
   renderContent();
 };
+
 window.handleAddPokemon = (idx) => {
-  console.log("[PKM] handleAddPokemon idx=", idx, "team=", state.activeTeamId);
   const team = getActiveTeam();
-  if (!team) { console.error("[PKM] No active team"); return; }
+  if (!team) return;
   while (team.pokemon.length <= idx) team.pokemon.push(makePokemon());
   if (!team.pokemon[idx] || !team.pokemon[idx].moves) team.pokemon[idx] = makePokemon();
   state.activeSlotIdx = idx;
   renderContent();
 };
+
 window.handleRemovePokemon = (idx, e) => {
   e?.stopPropagation();
   const team = getActiveTeam(); if (!team) return;
@@ -680,6 +662,7 @@ window.handleRemovePokemon = (idx, e) => {
   if (state.activeSlotIdx === idx) state.activeSlotIdx = null;
   renderContent();
 };
+
 window.handleTeamNameChange = (val) => { const t = getActiveTeam(); if (t) { t.name = val; renderSidebar(); } };
 window.handleSaveTeam = async () => { const t = getActiveTeam(); if (t) await saveTeam(t); };
 
@@ -690,78 +673,90 @@ window.handlePokemonNameChange = async (name) => {
   const data = await fetchPokemonData(name);
   if (data) {
     p.types = data.types; p.sprite = data.sprite; p.shinySprite = data.shinySprite;
-    p.abilities = data.abilities; p.legalMoves = data.legalMoves;
+    p.abilities = data.abilities; p.legalMoves = data.legalMoves; p.baseStats = data.baseStats;
     if (!p.ability && data.abilities.length) p.ability = data.abilities[0].name;
   }
   renderContent();
 };
 
-// Silent update — doesn't trigger full re-render (for text inputs being typed)
-window.updatePokemonFieldSilent = (field, value) => {
-  const p = getActivePokemon(); if (!p) return;
-  p[field] = value;
-};
+window.updatePokemonFieldSilent = (field, value) => { const p = getActivePokemon(); if (p) p[field] = value; };
 
-// Full update — triggers re-render of slot grid
 window.updatePokemonField = (field, value) => {
   const p = getActivePokemon(); if (!p) return;
   p[field] = value;
-  // Only re-render the grid slots, not the full content (avoids losing focus on editor)
   const grid = document.getElementById('pokemon-grid');
-  if (grid && state.activeSlotIdx !== null) {
+  if (grid) {
     const team = getActiveTeam();
-    const slots = Array.from({length: 6}, (_, i) => {
+    grid.innerHTML = Array.from({length:6}, (_,i) => {
       const sp = team.pokemon[i];
-      return sp && sp.name ? renderFilledSlot(sp, i) : `
-        <div class="pokemon-slot empty" onclick="handleAddPokemon(${i})">
-          <div class="empty-icon">➕</div><span>Agregar Pokémon</span>
-        </div>`;
-    });
-    grid.innerHTML = slots.join('');
+      return (sp && sp.name) ? renderFilledSlot(sp, i) : `<div class="pokemon-slot empty" onclick="handleAddPokemon(${i})"><div class="empty-icon">➕</div><span>Agregar Pokémon</span></div>`;
+    }).join('');
   }
-};
-
-window.updateMove = (idx, value) => {
-  const p = getActivePokemon(); if (!p) return;
-  p.moves[idx] = value;
 };
 
 window.updateEV = (stat, value) => {
   const p = getActivePokemon(); if (!p) return;
-  p.evs[stat] = Math.max(0, Math.min(252, parseInt(value)||0));
-  // Update just the EV track in-place without full re-render
-  const fill = document.querySelector(`[data-ev-stat="${stat}"] .ev-fill`);
   const total = Object.values(p.evs).reduce((a,b)=>a+b,0);
+  const newVal = Math.max(0, Math.min(EV_STAT_MAX, parseInt(value)||0));
+  // Enforce total cap
+  const otherTotal = total - p.evs[stat];
+  p.evs[stat] = Math.min(newVal, EV_TOTAL_MAX - otherTotal);
+
+  // Update DOM in-place
+  const fill = document.querySelector(`[data-ev-stat="${stat}"] .ev-fill`);
+  if (fill) {
+    fill.style.width = `${(p.evs[stat]/EV_STAT_MAX)*100}%`;
+    fill.className = `ev-fill${p.evs[stat]>=EV_STAT_MAX?' maxed':''}`;
+  }
+  const newTotal = Object.values(p.evs).reduce((a,b)=>a+b,0);
   const totalEl = document.querySelector('.ev-total');
-  if (totalEl) { totalEl.textContent = `${total}/510`; totalEl.className = `ev-total ${total>510?'over':'ok'}`; }
-  // Re-render EVs section only if fill not found (first render)
-  if (!fill) {
-    const evSection = document.querySelector('.evs-section');
-    if (evSection) {
-      const evsHtml = STATS.map(s=>`
-        <div class="ev-row">
-          <span class="ev-stat-name">${s}</span>
-          <div class="ev-track" data-ev-stat="${s}" onclick="handleEvTrackClick(event,'${s}')">
-            <div class="ev-fill${p.evs[s]>=252?' maxed':''}" style="width:${(p.evs[s]/252)*100}%"></div>
-          </div>
-          <input class="ev-input" type="number" min="0" max="252" value="${p.evs[s]}"
-            oninput="updateEV('${s}',parseInt(this.value)||0)">
-        </div>`).join('');
-      // replace just the rows
-    }
-  } else {
-    fill.style.width = `${(p.evs[stat]/252)*100}%`;
-    fill.className = `ev-fill${p.evs[stat]>=252?' maxed':''}`;
+  if (totalEl) {
+    const rem = EV_TOTAL_MAX - newTotal;
+    totalEl.className = `ev-total ${newTotal>EV_TOTAL_MAX?'over':'ok'}`;
+    totalEl.innerHTML = `${newTotal}/${EV_TOTAL_MAX} <span style="color:var(--text-muted);font-size:10px">(${rem>=0?rem:0} restantes)</span>`;
+  }
+  // Update stat final value
+  const natureMods = getNatureModifiers(p.nature);
+  const bs = p.baseStats;
+  if (bs) {
+    const natMod = natureMods[stat];
+    const statVal = calcStat(bs[stat], p.evs[stat], stat==='HP', natMod);
+    const finalEl = document.querySelector(`.ev-row [data-ev-stat="${stat}"] ~ .stat-final`);
+    // simpler: find all ev-rows and update the right one
+    document.querySelectorAll('.ev-row').forEach(row => {
+      const track = row.querySelector('[data-ev-stat]');
+      if (track && track.dataset.evStat === stat) {
+        const sf = row.querySelector('.stat-final');
+        if (sf) sf.textContent = statVal;
+        // also update input value if capped
+        const inp = row.querySelector('.ev-input');
+        if (inp && parseInt(inp.value) !== p.evs[stat]) inp.value = p.evs[stat];
+      }
+    });
   }
 };
 
 window.handleEvTrackClick = (e, stat) => {
   const r = e.currentTarget.getBoundingClientRect();
-  updateEV(stat, Math.round((e.clientX-r.left)/r.width*252/4)*4);
+  updateEV(stat, Math.round((e.clientX-r.left)/r.width * EV_STAT_MAX));
 };
 
-window.spreadEVs = () => { const p = getActivePokemon(); if (!p) return; STATS.forEach(s => p.evs[s]=0); p.evs.Atk=252; p.evs.Spe=252; p.evs.HP=4; renderEditor(); };
-window.spreadEVsSpecial = () => { const p = getActivePokemon(); if (!p) return; STATS.forEach(s => p.evs[s]=0); p.evs.SpA=252; p.evs.Spe=252; p.evs.HP=4; renderEditor(); };
+window.spreadEVs = () => {
+  const p = getActivePokemon(); if (!p) return;
+  STATS.forEach(s => p.evs[s]=0);
+  p.evs.Atk = Math.min(32, EV_TOTAL_MAX);
+  p.evs.Spe = Math.min(32, EV_TOTAL_MAX - p.evs.Atk);
+  p.evs.HP = Math.min(2, EV_TOTAL_MAX - p.evs.Atk - p.evs.Spe);
+  renderEditor();
+};
+window.spreadEVsSpecial = () => {
+  const p = getActivePokemon(); if (!p) return;
+  STATS.forEach(s => p.evs[s]=0);
+  p.evs.SpA = Math.min(32, EV_TOTAL_MAX);
+  p.evs.Spe = Math.min(32, EV_TOTAL_MAX - p.evs.SpA);
+  p.evs.HP = Math.min(2, EV_TOTAL_MAX - p.evs.SpA - p.evs.Spe);
+  renderEditor();
+};
 window.clearEVs = () => { const p = getActivePokemon(); if (!p) return; STATS.forEach(s => p.evs[s]=0); renderEditor(); };
 
 window.handleNewTeam = () => {
@@ -782,7 +777,7 @@ window.handleAuthSubmit = async () => {
   } else {
     const { error } = await supabase.auth.signUp({ email, password });
     if (error) { errEl.textContent = error.message; errEl.classList.add('visible'); }
-    else { errEl.textContent = '¡Revisá tu email para confirmar tu cuenta!'; errEl.style.color = 'var(--green)'; errEl.classList.add('visible'); }
+    else { errEl.textContent = '¡Revisá tu email para confirmar!'; errEl.style.color = 'var(--green)'; errEl.classList.add('visible'); }
   }
 };
 window.handleAuthTabSwitch = (tab) => { document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab)); };
@@ -805,7 +800,7 @@ function escHtml(str) {
 // ─── INIT ─────────────────────────────────────────────────────
 async function init() {
   createACDropdown();
-  getAllPokemonList(); // preload en background
+  getAllPokemonList();
 
   supabase.auth.onAuthStateChange(async (event, session) => {
     state.user = session?.user || null;
@@ -824,7 +819,6 @@ async function init() {
   });
 
   document.getElementById('auth-password')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
-
   document.addEventListener('click', e => {
     const dd = document.getElementById('ac-dropdown');
     if (dd && !dd.contains(e.target) && !e.target.matches('.field-input,.move-input')) hideDropdown();
