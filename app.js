@@ -138,18 +138,19 @@ function showdownKey(name) {
   return name.toLowerCase().replace(/[^a-z0-9]/g,'');
 }
 
-const SHOWDOWN_LEARNSET_CACHE = {};
 const SHOWDOWN_LEARNSET_URL = 'https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/learnsets.ts';
 let showdownLearnsetRaw = null;
+let showdownLearnsetPromise = null; // singleton promise — never fetch twice
 
 async function getShowdownLearnsetRaw() {
   if (showdownLearnsetRaw) return showdownLearnsetRaw;
-  try {
-    const res = await fetch(SHOWDOWN_LEARNSET_URL);
-    if (!res.ok) return null;
-    showdownLearnsetRaw = await res.text();
-    return showdownLearnsetRaw;
-  } catch { return null; }
+  if (!showdownLearnsetPromise) {
+    showdownLearnsetPromise = fetch(SHOWDOWN_LEARNSET_URL)
+      .then(r => r.ok ? r.text() : null)
+      .then(text => { showdownLearnsetRaw = text; return text; })
+      .catch(() => null);
+  }
+  return showdownLearnsetPromise;
 }
 
 // Extract learnset for a single pokemon key from raw TS text
@@ -244,16 +245,17 @@ async function fetchPokemonData(name) {
       legalMoves: [] // will be filled async below
     };
 
-    // Start with PokéAPI moves as fallback immediately
+    // Fallback: PokéAPI moves
     result.legalMoves = data.moves.map(m => m.move.name.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase()));
     POKEMON_CACHE[key] = result;
 
-    // Fetch Showdown learnset in background and update cache
-    fetchShowdownMoves(result).then(moves => {
-      if (moves && moves.length > 0) {
-        result.legalMoves = moves;
+    // Await Showdown learnset — this is the accurate source
+    try {
+      const showdownMoves = await fetchShowdownMoves(result);
+      if (showdownMoves && showdownMoves.length > 0) {
+        result.legalMoves = showdownMoves;
       }
-    });
+    } catch { /* keep PokéAPI fallback */ }
 
     return result;
   } catch(e) { return null; }
@@ -767,6 +769,9 @@ window.handlePokemonNameChange = async (name) => {
   const team = getActiveTeam(); if (!team || state.activeSlotIdx === null) return;
   const p = team.pokemon[state.activeSlotIdx];
   p.name = name;
+  // Show loading state in move inputs
+  const movesSection = document.querySelector('.moves-section');
+  if (movesSection) movesSection.style.opacity = '0.4';
   const data = await fetchPokemonData(name);
   if (data) {
     p.types = data.types; p.sprite = data.sprite; p.shinySprite = data.shinySprite;
@@ -898,6 +903,7 @@ function escHtml(str) {
 async function init() {
   createACDropdown();
   getAllPokemonList();
+  getShowdownLearnsetRaw(); // preload in background
 
   supabase.auth.onAuthStateChange(async (event, session) => {
     state.user = session?.user || null;
