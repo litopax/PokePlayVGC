@@ -1487,10 +1487,11 @@ body::before {
   border-top: 1px solid var(--border);
 }
 
-/* ─── SHOWDOWN STAT BARS + SLIDERS ─── */
+/* ─── SHOWDOWN STAT BARS ─── */
+/* grid: Stat(36) Base(28) Bar(1fr) Pts(28) Total(36) */
 .sd-stat-hdr {
   display: grid;
-  grid-template-columns: 36px 28px 1fr 28px 80px 36px;
+  grid-template-columns: 36px 28px 1fr 32px 36px;
   gap: 4px;
   font-size: 10px;
   color: var(--text-muted);
@@ -1499,31 +1500,40 @@ body::before {
   padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 3px;
-  align-items: center;
 }
-.sd-hdr-bar { text-align: center; }
-
 .sd-stat-row2 {
   display: grid;
-  grid-template-columns: 36px 28px 1fr 28px 80px 36px;
+  grid-template-columns: 36px 28px 1fr 32px 36px;
   gap: 4px;
   align-items: center;
-  height: 22px;
+  height: 20px;
 }
-
-/* Base stat colored bar (like Showdown) */
-.sd-base-bar-wrap {
+/* Two-layer bar: base stat (fixed) + EV overlay (clickable) */
+.sd-bars-wrap {
+  position: relative;
   height: 8px;
   background: var(--bg-hover, #1a1a1a);
   border-radius: 3px;
   overflow: hidden;
+  cursor: pointer;
 }
 .sd-base-bar {
+  position: absolute;
+  top: 0; left: 0;
   height: 100%;
   border-radius: 3px;
+  opacity: 0.9;
   transition: width .2s;
 }
-
+.sd-ev-bar-inner {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 3px;
+  background: var(--red);
+  border-radius: 0 0 3px 3px;
+  transition: width .1s;
+}
+.sd-ev-bar-inner.maxed { background: var(--gold); }
 /* EV number input */
 .sd-ev-n {
   background: var(--bg-card);
@@ -1538,57 +1548,20 @@ body::before {
   outline: none;
 }
 .sd-ev-n:focus { border-color: var(--red); }
-
-/* EV slider — styled like Showdown */
-.sd-ev-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 3px;
-  outline: none;
-  cursor: pointer;
-  background: linear-gradient(to right,
-    var(--sl-color, var(--red)) var(--sl-pct, 0%),
-    var(--bg-hover, #333) var(--sl-pct, 0%));
-}
-.sd-ev-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--text-primary);
-  border: 2px solid var(--bg-card);
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
-}
-.sd-ev-slider::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--text-primary);
-  border: 2px solid var(--bg-card);
-  cursor: pointer;
-}
-
-/* Stat total value */
-.sv {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-family: 'Share Tech Mono', monospace;
-  text-align: right;
-}
-
+/* Stat name */
+.sn { font-size: 11px; font-weight: 700; color: var(--text-secondary); font-family: 'Rajdhani',sans-serif; }
+/* Base stat number */
+.sb { font-size: 11px; color: var(--text-muted); font-family: 'Share Tech Mono',monospace; text-align: right; }
+/* Stat total */
+.sv { font-size: 12px; font-weight: 700; color: var(--text-primary); font-family: 'Share Tech Mono',monospace; text-align: right; }
+.stat-plus { color: #ff9944 !important; }
+.stat-minus { color: #6699ff !important; }
 .sd-stat-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
-  padding-top: 6px;
+  margin-top: 6px;
+  padding-top: 5px;
   border-top: 1px solid var(--border);
   font-size: 11px;
 }
-
-/* Override old ev-row styles that might conflict */
-.sd-stats-col2 .ev-row { display: none; }
