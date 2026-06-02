@@ -63,7 +63,7 @@ function getActivePokemon() {
 
 function makePokemon(name = '') {
   return {
-    name, nickname: '', item: '', ability: '', nature: 'Jolly',
+    name, nickname: '', item: '', ability: '', nature: '',
     shiny: false, gender: 'M', level: 50,
     moves: ['','','',''],
     evs: { HP:0, Atk:0, Def:0, SpA:0, SpD:0, Spe:0 },
@@ -325,7 +325,7 @@ function setupAutocomplete(inputEl, getItems, onSelect, opts = {}) {
     debounceTimer = setTimeout(() => refresh(inputEl.value), opts.debounce || 120);
   });
 
-  inputEl.addEventListener('focus', () => refresh(inputEl.value));
+  inputEl.addEventListener('focus', () => setTimeout(() => refresh(inputEl.value), 50));
 
   inputEl.addEventListener('keydown', e => {
     const dd = document.getElementById('ac-dropdown');
@@ -356,7 +356,15 @@ function setupAutocomplete(inputEl, getItems, onSelect, opts = {}) {
     }
   });
 
-  inputEl.addEventListener('blur', () => setTimeout(hideDropdown, 150));
+  inputEl.addEventListener('blur', (e) => {
+    // Don't hide if focus is moving to the dropdown itself
+    setTimeout(() => {
+      const dd = document.getElementById('ac-dropdown');
+      const active = document.activeElement;
+      if (dd && (dd.contains(active) || active?.closest('.ac-dropdown'))) return;
+      hideDropdown();
+    }, 200);
+  });
 }
 
 function setupItemAC(inputEl) {
@@ -381,7 +389,7 @@ function setupNatureAC(inputEl) {
       const fuzzy = all.filter(n => !n.label.toLowerCase().startsWith(v) && n.label.toLowerCase().includes(v));
       return [...exact, ...fuzzy];
     },
-    (val) => { const p = getActivePokemon(); if (p) { p.nature = val; renderEditor(); } }
+    (val) => { const p = getActivePokemon(); if (p) { p.nature = val; updateStatColors(); } }
   );
 }
 
@@ -612,7 +620,7 @@ function renderEditor() {
             </div>
             <div class="field-group">
               <label class="field-label">Naturaleza</label>
-              <input id="ac-nature" class="field-input" value="${escHtml(p.nature)}" placeholder="ej. Jolly" autocomplete="off">
+              <input id="ac-nature" class="field-input" value="${escHtml(p.nature)}" placeholder="Ej: Jolly, Modesta..." autocomplete="off">
             </div>
 
           </div>
@@ -711,7 +719,7 @@ window.handlePokemonNameChange = async (name) => {
   if (data) {
     p.types = data.types; p.sprite = data.sprite; p.shinySprite = data.shinySprite;
     p.abilities = data.abilities; p.legalMoves = data.legalMoves; p.baseStats = data.baseStats;
-    if (!p.ability && data.abilities.length) p.ability = data.abilities[0].name;
+    // Don't auto-fill ability — let user choose
   }
   renderContent();
 };
@@ -823,6 +831,27 @@ function toast(msg, type = 'info') {
   c.appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
+
+window.updateStatColors = () => {
+  const p = getActivePokemon(); if (!p) return;
+  const nm = getNatureMods(p.nature);
+  STATS.forEach(s => {
+    const rows = document.querySelectorAll('.ev-row');
+    rows.forEach(row => {
+      const track = row.querySelector(`[data-ev-stat="${s}"]`);
+      if (!track) return;
+      const nameEl = row.querySelector('.ev-stat-name');
+      const finalEl = row.querySelector('.stat-final');
+      const natMod = nm[s];
+      const cls = natMod === '+' ? 'stat-plus' : natMod === '-' ? 'stat-minus' : '';
+      if (nameEl) nameEl.className = `ev-stat-name ${cls}`;
+      if (finalEl) {
+        finalEl.className = `stat-final ${cls}`;
+        if (p.baseStats) finalEl.textContent = calcStat(p.baseStats[s], p.evs[s], s === 'HP', natMod);
+      }
+    });
+  });
+};
 
 window.handleShinyToggle = (val) => {
   const p = getActivePokemon(); if (!p) return;
