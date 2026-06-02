@@ -1093,9 +1093,12 @@ body::before {
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 6px;
   transition: background 0.1s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ac-item:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -1116,7 +1119,8 @@ body::before {
   font-family: 'Share Tech Mono', monospace;
   font-size: 10px;
   color: var(--text-muted);
-  margin-left: auto;
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
 /* ─── EDITOR SIN TABS ─── */
