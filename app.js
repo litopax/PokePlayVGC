@@ -278,28 +278,36 @@ function showDropdown(inputEl, items, onSelect) {
   createACDropdown();
   const dd = document.getElementById('ac-dropdown');
   if (!items.length) { dd.style.display = 'none'; return; }
-  dd.innerHTML = items.slice(0,12).map((item, i) => {
+
+  // Build new HTML
+  const newHTML = items.slice(0,12).map((item, i) => {
     const label = typeof item === 'object' ? item.label : item;
     const sub = typeof item === 'object' && item.sub ? ` <span class="ac-sub">${escHtml(item.sub)}</span>` : '';
     return `<div class="ac-item${i===0?' ac-selected':''}" data-idx="${i}">${escHtml(label)}${sub}</div>`;
   }).join('');
+
+  // Only update DOM if content actually changed — prevents flash on identical results
+  if (dd.dataset.html !== newHTML) {
+    dd.dataset.html = newHTML;
+    dd.innerHTML = newHTML;
+    dd.onmousedown = () => { _acMouseDown = true; };
+    dd.querySelectorAll('.ac-item').forEach(el => {
+      el.addEventListener('mousedown', e => { e.preventDefault(); });
+      el.addEventListener('click', () => {
+        const item = items[parseInt(el.dataset.idx)];
+        const val = typeof item === 'object' ? item.label : item;
+        if (document.activeElement && document.activeElement !== el) {
+          document.activeElement.value = val;
+        }
+        onSelect(val, item);
+        hideDropdown();
+        _acMouseDown = false;
+      });
+    });
+  }
+
   positionDropdown(inputEl);
   dd.style.display = 'block';
-  // mousedown fires BEFORE blur — setting flag prevents blur from closing
-  dd.onmousedown = () => { _acMouseDown = true; };
-  dd.querySelectorAll('.ac-item').forEach(el => {
-    el.addEventListener('mousedown', e => { e.preventDefault(); });
-    el.addEventListener('click', () => {
-      const item = items[parseInt(el.dataset.idx)];
-      const val = typeof item === 'object' ? item.label : item;
-      if (document.activeElement && document.activeElement !== el) {
-        document.activeElement.value = val;
-      }
-      onSelect(val, item);
-      hideDropdown();
-      _acMouseDown = false;
-    });
-  });
 }
 
 function hideDropdown() {
@@ -318,9 +326,14 @@ function setupAutocomplete(inputEl, getItems, onSelect, opts = {}) {
   let currentItems = [];
   let currentIdx = 0;
   let debounceTimer;
+  let callId = 0; // increment on every call — stale responses are ignored
 
   async function refresh(val) {
-    currentItems = await getItems(val);
+    const thisCall = ++callId;
+    const items = await getItems(val);
+    // If a newer call fired while we were waiting, discard this result
+    if (thisCall !== callId) return;
+    currentItems = items;
     currentIdx = 0;
     showDropdown(inputEl, currentItems, (val, item) => {
       inputEl.value = val;
