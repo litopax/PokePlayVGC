@@ -1178,3 +1178,29 @@ body::before {
 
 /* EV track needs data attr for targeted update */
 .ev-track[data-ev-stat] { cursor: pointer; }
+
+/* ─── STAT DISPLAY IN EV ROW ─── */
+.ev-row {
+  grid-template-columns: 52px 1fr 46px 40px;
+}
+
+.stat-final {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: right;
+  font-weight: bold;
+  min-width: 36px;
+}
+
+.stat-plus { color: #ff9966 !important; }
+.stat-minus { color: #6699ff !important; }
+
+/* Fix autocomplete — no right-align, no sub pushed to edge */
+.ac-item {
+  justify-content: flex-start;
+}
+.ac-sub {
+  margin-left: 8px;
+  flex-shrink: 0;
+}
