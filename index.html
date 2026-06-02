@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,8 +9,6 @@
 <body>
 
 <div id="app">
-
-  <!-- TOPBAR -->
   <header class="topbar">
     <div class="logo">
       <div class="logo-icon">⬤</div>
@@ -20,22 +18,16 @@
       <div class="user-info" id="user-info"></div>
     </div>
   </header>
-
-  <!-- MAIN -->
   <div class="main-layout">
-
-    <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="sidebar-title">My Teams</div>
-        <button class="btn btn-primary btn-full" onclick="handleNewTeam()">+ New Team</button>
+        <button class="btn btn-primary btn-full" id="btn-new-team">+ New Team</button>
       </div>
       <div class="team-list" id="team-list">
         <div class="no-teams">Loading...</div>
       </div>
     </aside>
-
-    <!-- CONTENT -->
     <main class="content" id="content-area">
       <div class="empty-state">
         <div class="empty-state-icon">🏆</div>
@@ -43,30 +35,29 @@
         <p>Build and save competitive Pokémon teams.</p>
       </div>
     </main>
-
   </div>
 </div>
 
 <!-- IMPORT MODAL -->
-<div class="modal-overlay" id="import-modal" onclick="if(event.target===this)closeImportModal()">
+<div class="modal-overlay" id="import-modal">
   <div class="modal-box modal-lg">
     <div class="modal-title">📥 Importar Equipo (Showdown)</div>
     <textarea id="import-modal-textarea" class="modal-textarea" placeholder="Pega aquí tu equipo en formato Showdown..."></textarea>
     <div class="modal-actions">
-      <button class="btn btn-primary" onclick="doImport()">Importar</button>
-      <button class="btn btn-ghost" onclick="closeImportModal()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-do-import">Importar</button>
+      <button class="btn btn-ghost" id="btn-close-import">Cancelar</button>
     </div>
   </div>
 </div>
 
 <!-- EXPORT MODAL -->
-<div class="modal-overlay" id="export-modal" onclick="if(event.target===this)closeExportModal()">
+<div class="modal-overlay" id="export-modal">
   <div class="modal-box modal-lg">
     <div class="modal-title">📋 Exportar Equipo (Showdown)</div>
     <textarea id="export-modal-textarea" class="modal-textarea" readonly></textarea>
     <div class="modal-actions">
-      <button class="btn btn-primary" onclick="copyExportModal()">📄 Copiar al portapapeles</button>
-      <button class="btn btn-ghost" onclick="closeExportModal()">Cerrar</button>
+      <button class="btn btn-primary" id="btn-copy-export">📄 Copiar al portapapeles</button>
+      <button class="btn btn-ghost" id="btn-close-export">Cerrar</button>
     </div>
   </div>
 </div>
@@ -79,8 +70,8 @@
       <h1>PKM <span>BUILDER</span></h1>
     </div>
     <div class="auth-tabs">
-      <button class="auth-tab active" data-tab="login" onclick="handleAuthTabSwitch('login')">Login</button>
-      <button class="auth-tab" data-tab="signup" onclick="handleAuthTabSwitch('signup')">Sign Up</button>
+      <button class="auth-tab active" data-tab="login" id="tab-login">Login</button>
+      <button class="auth-tab" data-tab="signup" id="tab-signup">Sign Up</button>
     </div>
     <div class="auth-field">
       <label>Email</label>
@@ -91,11 +82,10 @@
       <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
     </div>
     <div class="auth-error" id="auth-error"></div>
-    <button class="btn btn-primary btn-full" onclick="handleAuthSubmit()">Continue</button>
+    <button class="btn btn-primary btn-full" id="btn-auth-submit">Continuar</button>
   </div>
 </div>
 
-<!-- TOASTS -->
 <div class="toast-container" id="toast-container"></div>
 
 <script type="module" src="app.js"></script>
