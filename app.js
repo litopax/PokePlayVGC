@@ -68,19 +68,16 @@ const ITEMS = [
 // ─── STAT CALCULATION ─────────────────────────────────────────
 // Champions: stat = floor(base * level / 50) + EV bonus (each EV = +1)
 // HP formula differs from standard, but we'll use standard Lv50 approximation + EV as flat bonus
-function calcStat(base, ev, isHP, nature = null) {
-  const level = 50;
-  let stat;
+function calcStat(base, ev, isHP, nature) {
+  const iv = 31;
   if (isHP) {
-    stat = Math.floor((2 * base * level) / 100) + level + 10 + ev;
+    return Math.floor(((2 * base + iv) * 50) / 100) + 60 + ev;
   } else {
-    stat = Math.floor((2 * base * level) / 100) + 5 + ev;
-    if (nature) {
-      if (nature.startsWith('+')) stat = Math.floor(stat * 1.1);
-      else if (nature.startsWith('-')) stat = Math.floor(stat * 0.9);
-    }
+    const s = Math.floor(((2 * base + iv) * 50) / 100) + 5 + ev;
+    if (nature === '+') return Math.floor(s * 1.1);
+    if (nature === '-') return Math.floor(s * 0.9);
+    return s;
   }
-  return stat;
 }
 
 function getNatureModifiers(natureName) {
