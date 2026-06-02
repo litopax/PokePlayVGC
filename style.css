@@ -1298,3 +1298,50 @@ body::before {
 .sd-ev-fill.maxed { background: var(--gold); }
 .sd-ev-presets { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
 .sd-ev-presets .btn { font-size:10px; padding:2px 6px; }
+
+/* ─── EV SLIDER ─── */
+.sd-stat-row {
+  display: grid;
+  grid-template-columns: 36px 34px 36px;
+  grid-template-rows: auto 14px;
+  gap: 2px 4px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.sd-ev-slider {
+  grid-column: span 3;
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-hover, #222);
+  outline: none;
+  cursor: pointer;
+  margin: 0;
+}
+
+.sd-ev-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--red);
+  cursor: pointer;
+  border: 2px solid var(--bg-card, #111);
+  transition: background .15s, transform .1s;
+}
+
+.sd-ev-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.sd-ev-slider::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--red); cursor: pointer;
+  border: 2px solid var(--bg-card, #111);
+}
+
+/* Color the track fill via CSS gradient updated by JS */
+.sd-ev-slider { 
+  background: linear-gradient(to right, var(--red) 0%, var(--red) 0%, var(--bg-hover, #333) 0%);
+}
