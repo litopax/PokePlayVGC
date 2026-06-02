@@ -253,8 +253,9 @@ window.copyExportModal = () => {
   if (ta) navigator.clipboard.writeText(ta.value).then(() => toast('Copiado!', 'success'));
 };
 
-// ─── AUTOCOMPLETE ─────────────────────────────────────────────
-let acDropdownEl = null;
+// ─── AUTOCOMPLETE ENGINE ─────────────────────────────────────
+// Single global dropdown — mousedown on items prevents blur from firing
+let _acMouseDown = false; // true while mouse is pressed inside dropdown
 
 function createACDropdown() {
   if (document.getElementById('ac-dropdown')) return;
@@ -262,31 +263,42 @@ function createACDropdown() {
   el.id = 'ac-dropdown';
   el.className = 'ac-dropdown';
   document.body.appendChild(el);
-  acDropdownEl = el;
 }
 
 function positionDropdown(inputEl) {
   const rect = inputEl.getBoundingClientRect();
   const dd = document.getElementById('ac-dropdown');
   if (!dd) return;
-  dd.style.left = rect.left + 'px';
+  dd.style.left = (rect.left + window.scrollX) + 'px';
   dd.style.top = (rect.bottom + window.scrollY + 2) + 'px';
   dd.style.width = rect.width + 'px';
 }
 
-function showDropdown(inputEl, items, onSelect, selectedIdx = 0) {
+function showDropdown(inputEl, items, onSelect) {
   createACDropdown();
   const dd = document.getElementById('ac-dropdown');
-  if (!items.length) { hideDropdown(); return; }
+  if (!items.length) { dd.style.display = 'none'; return; }
   dd.innerHTML = items.slice(0,12).map((item, i) => {
     const label = typeof item === 'object' ? item.label : item;
     const sub = typeof item === 'object' && item.sub ? ` <span class="ac-sub">${escHtml(item.sub)}</span>` : '';
-    return `<div class="ac-item${i === selectedIdx ? ' ac-selected' : ''}" data-idx="${i}">${escHtml(label)}${sub}</div>`;
+    return `<div class="ac-item${i===0?' ac-selected':''}" data-idx="${i}">${escHtml(label)}${sub}</div>`;
   }).join('');
   positionDropdown(inputEl);
   dd.style.display = 'block';
+  // mousedown fires BEFORE blur — setting flag prevents blur from closing
+  dd.onmousedown = () => { _acMouseDown = true; };
   dd.querySelectorAll('.ac-item').forEach(el => {
-    el.addEventListener('mousedown', e => { e.preventDefault(); onSelect(items[parseInt(el.dataset.idx)]); });
+    el.addEventListener('mousedown', e => { e.preventDefault(); });
+    el.addEventListener('click', () => {
+      const item = items[parseInt(el.dataset.idx)];
+      const val = typeof item === 'object' ? item.label : item;
+      if (document.activeElement && document.activeElement !== el) {
+        document.activeElement.value = val;
+      }
+      onSelect(val, item);
+      hideDropdown();
+      _acMouseDown = false;
+    });
   });
 }
 
@@ -299,71 +311,64 @@ function updateDropdownSelection(idx) {
   const dd = document.getElementById('ac-dropdown');
   if (!dd) return;
   dd.querySelectorAll('.ac-item').forEach((el, i) => el.classList.toggle('ac-selected', i === idx));
-  const sel = dd.querySelector('.ac-selected');
-  if (sel) sel.scrollIntoView({ block: 'nearest' });
+  dd.querySelector('.ac-selected')?.scrollIntoView({ block: 'nearest' });
 }
 
 function setupAutocomplete(inputEl, getItems, onSelect, opts = {}) {
-  let selectedIdx = -1;
   let currentItems = [];
+  let currentIdx = 0;
   let debounceTimer;
 
   async function refresh(val) {
     currentItems = await getItems(val);
-    selectedIdx = currentItems.length > 0 ? 0 : -1;
-    showDropdown(inputEl, currentItems, item => {
-      const val = typeof item === 'object' ? item.label : item;
+    currentIdx = 0;
+    showDropdown(inputEl, currentItems, (val, item) => {
       inputEl.value = val;
       onSelect(val, item);
-      hideDropdown();
-      selectedIdx = -1;
-    }, selectedIdx);
+      inputEl.focus();
+    });
   }
 
   inputEl.addEventListener('input', () => {
     clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => refresh(inputEl.value), opts.debounce || 120);
+    debounceTimer = setTimeout(() => refresh(inputEl.value), opts.debounce || 100);
   });
 
-  inputEl.addEventListener('focus', () => setTimeout(() => refresh(inputEl.value), 50));
+  inputEl.addEventListener('focus', () => refresh(inputEl.value));
 
   inputEl.addEventListener('keydown', e => {
     const dd = document.getElementById('ac-dropdown');
-    if (!dd || dd.style.display === 'none') {
-      if (e.key === 'ArrowDown' || e.key === 'Enter') refresh(inputEl.value);
+    const visible = dd && dd.style.display !== 'none';
+    if (!visible) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); refresh(inputEl.value); }
       return;
     }
+    const max = Math.min(currentItems.length, 12) - 1;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      selectedIdx = Math.min(selectedIdx + 1, Math.min(currentItems.length, 12) - 1);
-      updateDropdownSelection(selectedIdx);
+      currentIdx = Math.min(currentIdx + 1, max);
+      updateDropdownSelection(currentIdx);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      selectedIdx = Math.max(selectedIdx - 1, 0);
-      updateDropdownSelection(selectedIdx);
+      currentIdx = Math.max(currentIdx - 1, 0);
+      updateDropdownSelection(currentIdx);
     } else if (e.key === 'Enter' || e.key === 'Tab') {
-      if (selectedIdx >= 0 && currentItems[selectedIdx]) {
+      if (currentItems[currentIdx]) {
         e.preventDefault();
-        const item = currentItems[selectedIdx];
+        const item = currentItems[currentIdx];
         const val = typeof item === 'object' ? item.label : item;
         inputEl.value = val;
         onSelect(val, item);
         hideDropdown();
-        selectedIdx = -1;
       }
     } else if (e.key === 'Escape') {
       hideDropdown();
     }
   });
 
-  inputEl.addEventListener('blur', (e) => {
-    // Don't hide if focus is moving to the dropdown itself
-    setTimeout(() => {
-      const dd = document.getElementById('ac-dropdown');
-      const active = document.activeElement;
-      if (dd && (dd.contains(active) || active?.closest('.ac-dropdown'))) return;
-      hideDropdown();
-    }, 200);
+  inputEl.addEventListener('blur', () => {
+    if (_acMouseDown) { _acMouseDown = false; return; }
+    setTimeout(hideDropdown, 50);
   });
 }
 
@@ -575,94 +580,93 @@ function renderEditor() {
 
   const total = Object.values(p.evs).reduce((a,b)=>a+b,0);
 
+  // Showdown-style layout
+  const nm = getNatureMods(p.nature);
   container.innerHTML = `
-    <div class="editor-panel">
-      <div class="editor-tabs">
-        <span class="editor-tab-title">Editando: <strong>${escHtml(p.name||'Pokémon')}</strong></span>
-        <div style="flex:1"></div>
-        <button class="btn btn-danger btn-sm" onclick="handleRemovePokemon(${state.activeSlotIdx})">✕ Quitar</button>
+    <div class="sd-editor">
+      <!-- LEFT: sprite + shiny -->
+      <div class="sd-sprite-col">
+        <div class="sd-sprite-wrap">
+          ${p.sprite
+            ? `<img class="sd-sprite" src="${p.shiny&&p.shinySprite?p.shinySprite:p.sprite}" alt="${p.name}">`
+            : `<div class="sd-sprite-placeholder">?</div>`}
+        </div>
+        <label class="sd-shiny-label">
+          <input type="checkbox" ${p.shiny?'checked':''} onchange="handleShinyToggle(this.checked)">
+          <span class="shiny-star">✦</span> Shiny
+        </label>
+        <select class="sd-gender-select" onchange="updatePokemonField('gender',this.value)">
+          <option${p.gender==='M'?' selected':''} value="M">♂</option>
+          <option${p.gender==='F'?' selected':''} value="F">♀</option>
+          <option${p.gender===''?' selected':''} value="">—</option>
+        </select>
+        <button class="btn btn-danger btn-xs" onclick="handleRemovePokemon(${state.activeSlotIdx})" style="margin-top:8px;width:100%">Quitar</button>
       </div>
-      <div class="editor-body">
-        <div class="editor-top">
-          <div class="editor-sprite-zone">
-            ${p.sprite
-              ? `<img class="editor-sprite" src="${p.shiny&&p.shinySprite ? p.shinySprite : p.sprite}" alt="${p.name}">`
-              : `<div class="sprite-placeholder">🔴</div>`}
-            <label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;font-size:12px;color:var(--text-muted);justify-content:center">
-              <input type="checkbox" ${p.shiny?'checked':''} onchange="handleShinyToggle(this.checked)"> <span class="shiny-star">✦</span> Shiny
-            </label>
-          </div>
-          <div class="editor-fields">
-            <div class="field-group" style="grid-column:span 2">
-              <label class="field-label">Pokémon</label>
-              <input id="ac-pokemon-name" class="field-input" value="${escHtml(p.name)}" placeholder="ej. Garchomp" autocomplete="off">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Apodo</label>
-              <input class="field-input" value="${escHtml(p.nickname)}" placeholder="Opcional"
-                oninput="updatePokemonFieldSilent('nickname',this.value)">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Género</label>
-              <select class="field-select" onchange="updatePokemonField('gender',this.value)">
-                <option${p.gender==='M'?' selected':''}>M</option>
-                <option${p.gender==='F'?' selected':''}>F</option>
-                <option${p.gender===''?' selected':''} value="">—</option>
-              </select>
-            </div>
-            <div class="field-group" style="grid-column:span 2">
-              <label class="field-label">Objeto</label>
-              <input id="ac-item" class="field-input" value="${escHtml(p.item)}" placeholder="ej. Choice Scarf" autocomplete="off">
-            </div>
-            <div class="field-group">
-              <label class="field-label">Habilidad</label>
-              <input id="ac-ability" class="field-input" value="${escHtml(p.ability)}" placeholder="${p.abilities.length ? 'Seleccionar' : 'Elige un Pokémon primero'}" autocomplete="off" ${!p.abilities.length ? 'readonly' : ''}>
-            </div>
-            <div class="field-group">
-              <label class="field-label">Naturaleza</label>
-              <input id="ac-nature" class="field-input" value="${escHtml(p.nature)}" placeholder="Ej: Jolly, Modesta..." autocomplete="off">
-            </div>
 
+      <!-- CENTER: fields + moves -->
+      <div class="sd-center-col">
+        <div class="sd-row">
+          <div class="sd-field">
+            <label>Pokémon</label>
+            <input id="ac-pokemon-name" class="sd-input" value="${escHtml(p.name)}" placeholder="Nombre" autocomplete="off">
+          </div>
+          <div class="sd-field">
+            <label>Apodo</label>
+            <input class="sd-input" value="${escHtml(p.nickname)}" placeholder="(opcional)" autocomplete="off"
+              oninput="updatePokemonFieldSilent('nickname',this.value)">
           </div>
         </div>
-
-        <div class="moves-section">
-          <div class="section-label">Movimientos</div>
-          <div class="moves-grid">
-            ${p.moves.map((m,i) => `
-              <div class="move-input-wrap">
-                <span class="move-num">${i+1}</span>
-                <input id="ac-move-${i}" class="move-input" value="${escHtml(m)}" placeholder="Movimiento ${i+1}" autocomplete="off">
-              </div>`).join('')}
+        <div class="sd-row">
+          <div class="sd-field sd-field-wide">
+            <label>Objeto</label>
+            <input id="ac-item" class="sd-input" value="${escHtml(p.item)}" placeholder="Objeto" autocomplete="off">
           </div>
         </div>
+        <div class="sd-row">
+          <div class="sd-field">
+            <label>Habilidad</label>
+            <input id="ac-ability" class="sd-input" value="${escHtml(p.ability)}"
+              placeholder="${p.abilities.length?'Habilidad':'Elige un Pokémon'}"
+              autocomplete="off" ${!p.abilities.length?'readonly':''}>
+          </div>
+          <div class="sd-field">
+            <label>Naturaleza</label>
+            <input id="ac-nature" class="sd-input" value="${escHtml(p.nature)}" placeholder="Naturaleza" autocomplete="off">
+          </div>
+        </div>
+        <div class="sd-moves">
+          ${p.moves.map((m,i)=>`
+            <div class="sd-move-row">
+              <span class="sd-move-num">${i+1}</span>
+              <input id="ac-move-${i}" class="sd-input sd-move-input" value="${escHtml(m)}" placeholder="Movimiento ${i+1}" autocomplete="off">
+            </div>`).join('')}
+        </div>
+      </div>
 
-        <div class="evs-section">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-            <div class="section-label">Puntos de esfuerzo</div>
-            <span class="ev-total ${total>EV_TOTAL_MAX?'over':'ok'}">${total}/${EV_TOTAL_MAX} <span style="font-size:10px;color:var(--text-muted)">(${Math.max(0,EV_TOTAL_MAX-total)} rest.)</span></span>
-          </div>
-          ${STATS.map(s=>{
-            const nm = getNatureMods(p.nature);
-            const natMod = nm[s];
-            const natClass = natMod==='+'?'stat-plus':natMod==='-'?'stat-minus':'';
-            const statVal = p.baseStats ? calcStat(p.baseStats[s], p.evs[s], s==='HP', natMod) : '—';
-            return `
-            <div class="ev-row">
-              <span class="ev-stat-name ${natClass}">${s}</span>
-              <div class="ev-track" data-ev-stat="${s}" onclick="handleEvTrackClick(event,'${s}')">
-                <div class="ev-fill${p.evs[s]>=EV_STAT_MAX?' maxed':''}" style="width:${(p.evs[s]/EV_STAT_MAX)*100}%"></div>
-              </div>
-              <input class="ev-input" type="number" min="0" max="${EV_STAT_MAX}" value="${p.evs[s]}"
-                oninput="updateEV('${s}',parseInt(this.value)||0)">
-              <span class="stat-final ${natClass}">${statVal}</span>
-            </div>`;
-          }).join('')}
-          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-            <button class="btn btn-ghost btn-sm" onclick="spreadEVs()">Atk/Spe</button>
-            <button class="btn btn-ghost btn-sm" onclick="spreadEVsSpecial()">SpA/Spe</button>
-            <button class="btn btn-ghost btn-sm" onclick="clearEVs()">Limpiar</button>
-          </div>
+      <!-- RIGHT: stats + EVs -->
+      <div class="sd-stats-col">
+        <div class="sd-stats-header">
+          <span>Stat</span><span>EV</span><span>Total</span>
+          <span class="ev-total ${total>EV_TOTAL_MAX?'over':'ok'}" style="grid-column:span 3;text-align:right;font-size:11px">${total}/${EV_TOTAL_MAX}</span>
+        </div>
+        ${STATS.map(s=>{
+          const natMod = nm[s];
+          const cls = natMod==='+'?'stat-plus':natMod==='-'?'stat-minus':'';
+          const statVal = p.baseStats ? calcStat(p.baseStats[s], p.evs[s], s==='HP', natMod) : '—';
+          return `<div class="sd-stat-row">
+            <span class="sd-stat-name ${cls}">${s}</span>
+            <input class="sd-ev-input" type="number" min="0" max="${EV_STAT_MAX}" value="${p.evs[s]}"
+              oninput="updateEV('${s}',parseInt(this.value)||0)">
+            <span class="sd-stat-val ${cls}" data-stat="${s}">${statVal}</span>
+            <div class="sd-ev-bar" data-ev-stat="${s}" onclick="handleEvTrackClick(event,'${s}')">
+              <div class="sd-ev-fill${p.evs[s]>=EV_STAT_MAX?' maxed':''}" style="width:${(p.evs[s]/EV_STAT_MAX)*100}%"></div>
+            </div>
+          </div>`;
+        }).join('')}
+        <div class="sd-ev-presets">
+          <button class="btn btn-ghost btn-xs" onclick="spreadEVs()">Atk/Spe</button>
+          <button class="btn btn-ghost btn-xs" onclick="spreadEVsSpecial()">SpA/Spe</button>
+          <button class="btn btn-ghost btn-xs" onclick="clearEVs()">Limpiar</button>
         </div>
       </div>
     </div>`;
@@ -813,37 +817,30 @@ window.updateEV = (stat, value) => {
   p.evs[stat] = Math.min(newVal, EV_TOTAL_MAX - otherTotal);
   const total = Object.values(p.evs).reduce((a,b)=>a+b,0);
   // Update total display
+  // Update total display
   const totalEl = document.querySelector('.ev-total');
   if (totalEl) {
-    totalEl.innerHTML = `${total}/${EV_TOTAL_MAX} <span style="font-size:10px;color:var(--text-muted)">(${Math.max(0,EV_TOTAL_MAX-total)} rest.)</span>`;
+    totalEl.textContent = `${total}/${EV_TOTAL_MAX}`;
     totalEl.className = `ev-total ${total>EV_TOTAL_MAX?'over':'ok'}`;
   }
-  // Update track fill
-  const fill = document.querySelector(`[data-ev-stat="${stat}"] .ev-fill`);
-  if (fill) {
-    fill.style.width = `${(p.evs[stat]/EV_STAT_MAX)*100}%`;
-    fill.className = `ev-fill${p.evs[stat]>=EV_STAT_MAX?' maxed':''}`;
+  // Update bar fill (new sd- layout)
+  const bar = document.querySelector(`[data-ev-stat="${stat}"] .sd-ev-fill`);
+  if (bar) {
+    bar.style.width = `${(p.evs[stat]/EV_STAT_MAX)*100}%`;
+    bar.className = `sd-ev-fill${p.evs[stat]>=EV_STAT_MAX?' maxed':''}`;
   }
-  // Update input if capped
-  const inp = document.querySelector(`[data-ev-stat="${stat}"] ~ .ev-input`);
-  // Update stat final value
+  // Update stat value display
   const nm = getNatureMods(p.nature);
-  if (p.baseStats) {
-    document.querySelectorAll('.ev-row').forEach(row => {
-      const track = row.querySelector('[data-ev-stat]');
-      if (track && track.dataset.evStat === stat) {
-        const sf = row.querySelector('.stat-final');
-        if (sf) sf.textContent = calcStat(p.baseStats[stat], p.evs[stat], stat==='HP', nm[stat]);
-        const input = row.querySelector('.ev-input');
-        if (input && parseInt(input.value) !== p.evs[stat]) input.value = p.evs[stat];
-      }
-    });
-  }
+  const statEl = document.querySelector(`[data-stat="${stat}"]`);
+  if (statEl && p.baseStats) statEl.textContent = calcStat(p.baseStats[stat], p.evs[stat], stat==='HP', nm[stat]);
+  // Fix input if capped
+  const evInput = document.querySelector(`[data-ev-stat="${stat}"]`)?.closest('.sd-stat-row')?.querySelector('.sd-ev-input');
+  if (evInput && parseInt(evInput.value) !== p.evs[stat]) evInput.value = p.evs[stat];
 };
 
 window.handleEvTrackClick = (e, stat) => {
   const r = e.currentTarget.getBoundingClientRect();
-  updateEV(stat, Math.round((e.clientX-r.left)/r.width*EV_STAT_MAX));
+  updateEV(stat, Math.max(0, Math.min(EV_STAT_MAX, Math.round((e.clientX-r.left)/r.width*EV_STAT_MAX))));
 };
 
 window.spreadEVs = () => { const p = getActivePokemon(); if (!p) return; STATS.forEach(s => p.evs[s]=0); p.evs.Atk=32; p.evs.Spe=32; p.evs.HP=2; renderEditor(); };
