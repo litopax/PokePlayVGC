@@ -688,7 +688,6 @@ function renderEditor() {
       <div class="sd-stats-col">
         <div class="sd-stats-header">
           <span>Stat</span><span>EV</span><span>Total</span>
-          <span class="ev-total ${total>EV_TOTAL_MAX?'over':'ok'}" style="grid-column:span 3;text-align:right;font-size:11px">${total}/${EV_TOTAL_MAX}</span>
         </div>
         ${STATS.map(s=>{
           const natMod = nm[s];
@@ -704,6 +703,9 @@ function renderEditor() {
               oninput="updateEV('${s}',parseInt(this.value)||0)">
           </div>`;
         }).join('')}
+        <div class="sd-ev-total-row">
+          <span class="ev-total ${total>EV_TOTAL_MAX?'over':'ok'}">${total}/${EV_TOTAL_MAX} pts</span>
+        </div>
         <div class="sd-ev-presets">
           <button class="btn btn-ghost btn-xs" onclick="spreadEVs()">Atk/Spe</button>
           <button class="btn btn-ghost btn-xs" onclick="spreadEVsSpecial()">SpA/Spe</button>
