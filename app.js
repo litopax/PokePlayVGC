@@ -153,6 +153,7 @@ async function saveTeam(team) {
     pokemon: team.pokemon.map(p => p ? {
       name: p.name, nickname: p.nickname, item: p.item, ability: p.ability,
       nature: p.nature, shiny: p.shiny, gender: p.gender, level: p.level,
+      teraType: p.teraType || '',
       moves: p.moves, evs: p.evs, types: p.types,
       sprite: p.sprite, shinySprite: p.shinySprite, baseStats: p.baseStats,
       abilities: p.abilities, legalMoves: p.legalMoves
@@ -917,17 +918,15 @@ window.handleAuthSubmit = async () => {
 };
 window.handleAuthTabSwitch = (tab) => { document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab)); };
 window.handleLogout = async () => {
-  try {
-    const { error } = await supabase.auth.signOut();
-    if (error) { toast('Error al cerrar sesión: ' + error.message, 'error'); return; }
-    // Force UI reset in case onAuthStateChange doesn't fire
-    state.user = null; state.teams = []; state.activeTeamId = null; state.activeSlotIdx = null;
-    const overlay = document.getElementById('auth-overlay');
-    const userInfo = document.getElementById('user-info');
-    if (overlay) overlay.style.display = 'flex';
-    if (userInfo) userInfo.innerHTML = '';
-    renderAll();
-  } catch(e) { toast('Error: ' + e.message, 'error'); }
+  // Reset state and UI immediately (optimistic logout)
+  state.user = null; state.teams = []; state.activeTeamId = null; state.activeSlotIdx = null;
+  const overlay = document.getElementById('auth-overlay');
+  const userInfo = document.getElementById('user-info');
+  if (overlay) overlay.style.display = 'flex';
+  if (userInfo) userInfo.innerHTML = '';
+  renderAll();
+  // Fire signOut in background
+  try { await supabase.auth.signOut(); } catch(e) { console.warn('signOut error:', e); }
 };
 
 // ─── TOAST ───────────────────────────────────────────────────
