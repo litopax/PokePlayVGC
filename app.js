@@ -787,14 +787,12 @@ window.handlePokemonNameChange = async (name) => {
   // ── Targeted DOM updates — no full re-render ──────────────────
 
   // 1. Update sprite in editor
-  const editorSprite = document.querySelector('.editor-sprite');
-  if (editorSprite && p.sprite) editorSprite.src = p.shiny && p.shinySprite ? p.shinySprite : p.sprite;
-  else if (!editorSprite && p.sprite) {
-    const zone = document.querySelector('.editor-sprite-zone');
-    if (zone) zone.innerHTML = `<img class="editor-sprite" src="${p.sprite}" alt="${p.name}">
-      <label style="display:flex;align-items:center;gap:6px;margin-top:8px;cursor:pointer;font-size:12px;color:var(--text-muted);justify-content:center">
-        <input type="checkbox" ${p.shiny?'checked':''} onchange="handleShinyToggle(this.checked)"> <span class="shiny-star">✦</span> Shiny
-      </label>`;
+  const spriteWrap = document.querySelector('.sd-sprite-wrap');
+  if (spriteWrap && p.sprite) {
+    const src = p.shiny && p.shinySprite ? p.shinySprite : p.sprite;
+    const existing = spriteWrap.querySelector('.sd-sprite');
+    if (existing) existing.src = src;
+    else spriteWrap.innerHTML = `<img class="sd-sprite" src="${src}" alt="${p.name}">`;
   }
 
   // 2. Update ability field — re-setup AC with new abilities list
@@ -1004,7 +1002,7 @@ window.handleShinyToggle = (val) => {
   const p = getActivePokemon(); if (!p) return;
   p.shiny = val;
   // Update just the sprite without full re-render
-  const sprite = document.querySelector('.editor-sprite');
+  const sprite = document.querySelector('.sd-sprite');
   if (sprite && p.sprite) sprite.src = val && p.shinySprite ? p.shinySprite : p.sprite;
   const gridSprite = document.querySelector(`.pokemon-slot.active .slot-sprite`);
   if (gridSprite && p.sprite) gridSprite.src = val && p.shinySprite ? p.shinySprite : p.sprite;
