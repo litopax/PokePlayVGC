@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pokémon Champions</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E8192C;
+    --gold: #F5A623;
+    --dark: #0A0A0F;
+    --darker: #050508;
+    --surface: #12121A;
+    --surface2: #1A1A26;
+    --border: #2A2A3E;
+    --text: #E8E8F0;
+    --muted: #6B6B8A;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Rajdhani', sans-serif;
+    background: var(--darker);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(232,25,44,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,25,44,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* LOGIN */
+  #login-screen {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100; background: var(--darker);
+  }
+  .login-wrap { width: 100%; max-width: 420px; padding: 20px; animation: fadeUp 0.6s ease both; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(24px); } to { opacity:1; transform:translateY(0); } }
+  .login-logo { text-align: center; margin-bottom: 40px; }
+  .login-logo h1 { font-family:'Bebas Neue',sans-serif; font-size:52px; letter-spacing:4px; line-height:1; }
+  .login-logo h1 span { color: var(--red); }
+  .login-logo p { font-size:13px; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin-top:6px; }
+  .login-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:32px; }
+  .tabs { display:flex; gap:4px; background:var(--darker); border-radius:8px; padding:4px; margin-bottom:28px; }
+  .tab-btn { flex:1; padding:8px; background:none; border:none; color:var(--muted); font-family:'Rajdhani',sans-serif; font-size:14px; font-weight:600; letter-spacing:1px; text-transform:uppercase; cursor:pointer; border-radius:6px; transition:all 0.2s; }
+  .tab-btn.active { background:var(--surface2); color:var(--text); }
+  .field { margin-bottom:16px; }
+  .field label { display:block; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .field input { width:100%; background:var(--darker); border:1px solid var(--border); border-radius:8px; padding:12px 14px; color:var(--text); font-family:'Rajdhani',sans-serif; font-size:15px; outline:none; transition:border-color 0.2s; }
+  .field input:focus { border-color: var(--red); }
+  .btn-primary { width:100%; padding:14px; background:var(--red); border:none; border-radius:8px; color:#fff; font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:2px; cursor:pointer; transition:opacity 0.2s,transform 0.1s; margin-top:8px; }
+  .btn-primary:hover { opacity:0.88; }
+  .btn-primary:active { transform:scale(0.98); }
+  .error-msg { background:rgba(232,25,44,0.1); border:1px solid rgba(232,25,44,0.3); border-radius:6px; padding:10px 14px; font-size:13px; color:#ff6b7a; margin-bottom:16px; display:none; }
+  #tab-register { display:none; }
+
+  /* HOME */
+  #home-screen { display:none; min-height:100vh; position:relative; z-index:1; }
+  header { display:flex; align-items:center; justify-content:space-between; padding:16px 32px; border-bottom:1px solid var(--border); background:rgba(10,10,15,0.8); backdrop-filter:blur(12px); position:sticky; top:0; z-index:10; }
+  .header-logo { font-family:'Bebas Neue',sans-serif; font-size:28px; letter-spacing:3px; }
+  .header-logo span { color: var(--red); }
+  .header-right { display:flex; align-items:center; gap:16px; }
+  .user-badge { display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:6px 14px; font-size:13px; font-weight:600; letter-spacing:1px; }
+  .user-dot { width:8px; height:8px; background:#4CAF50; border-radius:50%; }
+  .btn-logout { background:none; border:1px solid var(--border); border-radius:8px; padding:6px 14px; color:var(--muted); font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600; letter-spacing:1px; cursor:pointer; transition:all 0.2s; }
+  .btn-logout:hover { border-color:var(--red); color:var(--red); }
+  main { padding:40px 32px; max-width:1200px; margin:0 auto; }
+  .cta-section { display:flex; align-items:center; justify-content:space-between; margin-bottom:48px; gap:20px; flex-wrap:wrap; }
+  .cta-section h2 { font-family:'Bebas Neue',sans-serif; font-size:40px; letter-spacing:2px; line-height:1; }
+  .cta-section h2 span { color: var(--red); }
+  .cta-section p { font-size:15px; color:var(--muted); margin-top:6px; }
+  .cta-buttons { display:flex; gap:12px; flex-wrap:wrap; }
+  .btn-teambuilder { display:flex; align-items:center; gap:12px; background:var(--red); border:none; border-radius:10px; padding:16px 28px; color:#fff; font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:2px; cursor:pointer; text-decoration:none; transition:opacity 0.2s,transform 0.15s; white-space:nowrap; }
+  .btn-teambuilder:hover { opacity:0.88; transform:translateY(-2px); }
+  .btn-sync { display:flex; align-items:center; gap:8px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:16px 20px; color:var(--text); font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:2px; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+  .btn-sync:hover { border-color:var(--gold); color:var(--gold); }
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .section-title { font-family:'Bebas Neue',sans-serif; font-size:26px; letter-spacing:2px; color:var(--muted); }
+  .teams-count { font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:4px 12px; }
+  .teams-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+  .team-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; transition:border-color 0.2s,transform 0.2s; position:relative; overflow:hidden; }
+  .team-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--red); opacity:0; transition:opacity 0.2s; }
+  .team-card:hover { border-color:rgba(232,25,44,0.4); transform:translateY(-2px); }
+  .team-card:hover::before { opacity:1; }
+  .team-format { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--red); margin-bottom:6px; font-weight:700; }
+  .team-name { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:1px; margin-bottom:12px; }
+  .team-pokemon { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; min-height:32px; }
+  .poke-chip { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:3px 10px; font-size:12px; font-weight:600; color:var(--text); }
+  .team-actions { display:flex; gap:8px; }
+  .btn-export { flex:1; padding:8px; background:var(--surface2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:600; letter-spacing:1px; cursor:pointer; transition:all 0.2s; }
+  .btn-export:hover { border-color:var(--gold); color:var(--gold); }
+  .btn-delete { padding:8px 12px; background:none; border:1px solid var(--border); border-radius:6px; color:var(--muted); cursor:pointer; transition:all 0.2s; font-size:14px; }
+  .btn-delete:hover { border-color:var(--red); color:var(--red); }
+  .empty-state { grid-column:1/-1; text-align:center; padding:60px 20px; color:var(--muted); }
+  .empty-state .empty-icon { font-size:48px; margin-bottom:16px; opacity:0.4; }
+  .empty-state p { font-size:15px; }
+
+  /* SYNC TOAST */
+  .toast { position:fixed; bottom:24px; right:24px; background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:12px 20px; font-size:13px; font-weight:600; letter-spacing:1px; z-index:999; opacity:0; transform:translateY(10px); transition:all 0.3s; pointer-events:none; }
+  .toast.show { opacity:1; transform:translateY(0); }
+  .toast.success { border-color:#4CAF50; color:#4CAF50; }
+  .toast.error { border-color:var(--red); color:var(--red); }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:200; padding:20px; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:28px; width:100%; max-width:560px; animation:fadeUp 0.3s ease both; }
+  .modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .modal-title { font-family:'Bebas Neue',sans-serif; font-size:24px; letter-spacing:2px; }
+  .modal-close { background:none; border:none; color:var(--muted); font-size:20px; cursor:pointer; padding:4px 8px; transition:color 0.2s; }
+  .modal-close:hover { color:var(--text); }
+  .export-text { background:var(--darker); border:1px solid var(--border); border-radius:8px; padding:16px; font-family:monospace; font-size:12px; color:var(--text); white-space:pre-wrap; max-height:300px; overflow-y:auto; margin-bottom:16px; line-height:1.6; }
+  .btn-copy { width:100%; padding:12px; background:var(--gold); border:none; border-radius:8px; color:var(--darker); font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:2px; cursor:pointer; transition:opacity 0.2s; }
+  .btn-copy:hover { opacity:0.88; }
+  .loading { display:flex; align-items:center; justify-content:center; padding:40px; color:var(--muted); font-size:14px; letter-spacing:2px; text-transform:uppercase; }
+  .spinner { width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--red); border-radius:50%; animation:spin 0.7s linear infinite; margin-right:12px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-logo">
+      <h1>POKÉMON <span>CHAMPIONS</span></h1>
+      <p>Competitive Battle Platform</p>
+    </div>
+    <div class="login-card">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('login')">Sign In</button>
+        <button class="tab-btn" onclick="switchTab('register')">Register</button>
+      </div>
+      <div id="auth-error" class="error-msg"></div>
+      <div id="tab-login">
+        <div class="field"><label>Email</label><input type="email" id="login-email" placeholder="trainer@champions.gg" /></div>
+        <div class="field"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" /></div>
+        <button class="btn-primary" onclick="doLogin()">ENTER ARENA</button>
+      </div>
+      <div id="tab-register">
+        <div class="field"><label>Email</label><input type="email" id="reg-email" placeholder="trainer@champions.gg" /></div>
+        <div class="field"><label>Password</label><input type="password" id="reg-password" placeholder="Min. 6 characters" /></div>
+        <button class="btn-primary" onclick="doRegister()">CREATE ACCOUNT</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="home-screen">
+  <header>
+    <div class="header-logo">POKÉMON <span>CHAMPIONS</span></div>
+    <div class="header-right">
+      <div class="user-badge"><div class="user-dot"></div><span id="user-email-display">—</span></div>
+      <button class="btn-logout" onclick="doLogout()">LOGOUT</button>
+    </div>
+  </header>
+  <main>
+    <div class="cta-section">
+      <div>
+        <h2>YOUR <span>TEAMS</span></h2>
+        <p>Build, manage and export your competitive teams</p>
+      </div>
+      <div class="cta-buttons">
+        <button class="btn-sync" onclick="syncTeams()" title="Sync teams from Teambuilder">⟳ SYNC</button>
+        <a href="http://localhost.psim.us" class="btn-teambuilder">⚔ TEAMBUILDER</a>
+      </div>
+    </div>
+    <div class="section-header">
+      <div class="section-title">MY TEAMS</div>
+      <div class="teams-count" id="teams-count">0 TEAMS</div>
+    </div>
+    <div class="teams-grid" id="teams-grid">
+      <div class="loading"><div class="spinner"></div>Loading teams...</div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-team-name">EXPORT TEAM</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="export-text" id="export-content"></div>
+    <button class="btn-copy" onclick="copyExport()">COPY TO CLIPBOARD</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  'https://altfgsmuwbifuojirugg.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsdGZnc211d2JpZnVvamlydWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTc2NjksImV4cCI6MjA5NTgzMzY2OX0.2Xf4hOr8aXW9Qa5e-oS3KKg3ojuedbE5VFDFwEpJz44'
+);
+
+let currentUserId = null;
+
+// ── AUTH ──
+sb.auth.onAuthStateChange((event, session) => {
+  if (session) { currentUserId = session.user.id; showHome(session.user); }
+  else { currentUserId = null; showLogin(); }
+});
+
+function showLogin() {
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('home-screen').style.display = 'none';
+}
+
+function showHome(user) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('home-screen').style.display = 'block';
+  document.getElementById('user-email-display').textContent = user.email.split('@')[0].toUpperCase();
+  loadTeams();
+  // Auto-sync on arrival
+  setTimeout(syncTeams, 800);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', (i===0)===(tab==='login')));
+  document.getElementById('tab-login').style.display = tab==='login'?'block':'none';
+  document.getElementById('tab-register').style.display = tab==='register'?'block':'none';
+  hideError();
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-password').value;
+  if (!email||!pass) return showError('Please fill in all fields.');
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) showError(error.message);
+}
+
+async function doRegister() {
+  const email = document.getElementById('reg-email').value.trim();
+  const pass = document.getElementById('reg-password').value;
+  if (!email||!pass) return showError('Please fill in all fields.');
+  const { error } = await sb.auth.signUp({ email, password: pass });
+  if (error) showError(error.message);
+  else showError('✓ Account created! You can now sign in.');
+}
+
+async function doLogout() { await sb.auth.signOut(); }
+
+function showError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+function hideError() { document.getElementById('auth-error').style.display = 'none'; }
+
+// ── SYNC FROM LOCALSTORAGE ──
+async function syncTeams() {
+  if (!currentUserId) return;
+
+  // Read teams from Showdown's localStorage
+  const raw = localStorage.getItem('showdown_teams_local') || localStorage.getItem('showdown_teams');
+  if (!raw) { showToast('No local teams found', 'error'); return; }
+
+  let packed;
+  try { packed = raw; } catch(e) { showToast('Error reading teams', 'error'); return; }
+
+  // Unpack Showdown's packed format
+  const teams = unpackTeams(packed);
+  if (!teams.length) { showToast('No teams to sync', 'error'); return; }
+
+  let synced = 0;
+  for (const team of teams) {
+    // Check if already exists (by name + format)
+    const { data: existing } = await sb.from('teams')
+      .select('id')
+      .eq('user_id', currentUserId)
+      .eq('name', team.name)
+      .eq('format', team.format)
+      .single();
+
+    if (existing) {
+      // Update
+      await sb.from('teams').update({ data: team.data }).eq('id', existing.id);
+    } else {
+      // Insert
+      await sb.from('teams').insert({
+        user_id: currentUserId,
+        name: team.name,
+        format: team.format,
+        data: team.data
+      });
+    }
+    synced++;
+  }
+
+  showToast(`✓ ${synced} team${synced!==1?'s':''} synced`, 'success');
+  loadTeams();
+}
+
+// ── UNPACK SHOWDOWN TEAMS ──
+function unpackTeams(raw) {
+  const teams = [];
+  // Showdown stores teams separated by newlines, each team starts with ]format\nname
+  const parts = raw.split('\n\n\n');
+  for (const part of parts) {
+    if (!part.trim()) continue;
+    const lines = part.trim().split('\n');
+    if (!lines.length) continue;
+
+    let format = '';
+    let name = '';
+    let dataLines = [];
+
+    // First line may be ]format or the team name
+    if (lines[0].startsWith(']')) {
+      format = lines[0].slice(1).trim();
+      name = lines[1] || 'My Team';
+      dataLines = lines.slice(2);
+    } else {
+      name = lines[0];
+      dataLines = lines.slice(1);
+    }
+
+    // Clean up format name
+    format = format || 'Champions VGC 2026 Reg M-A';
+    name = name.trim() || `My Team [${format}]`;
+
+    const data = dataLines.join('\n').trim();
+    if (data) teams.push({ name, format, data });
+  }
+  return teams;
+}
+
+// ── LOAD TEAMS FROM SUPABASE ──
+async function loadTeams() {
+  if (!currentUserId) return;
+  const grid = document.getElementById('teams-grid');
+  grid.innerHTML = '<div class="loading"><div class="spinner"></div>Loading teams...</div>';
+
+  const { data: teams } = await sb.from('teams').select('*')
+    .eq('user_id', currentUserId)
+    .order('created_at', { ascending: false });
+
+  document.getElementById('teams-count').textContent = `${(teams||[]).length} TEAM${(teams||[]).length!==1?'S':''}`;
+
+  if (!teams || !teams.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🏆</div><p>No teams yet. Build your first team and click SYNC!</p></div>`;
+    return;
+  }
+
+  window._teams = teams;
+  grid.innerHTML = teams.map(team => {
+    const pokemon = parsePokemonNames(team.data);
+    const chips = pokemon.map(p => `<span class="poke-chip">${escHtml(p)}</span>`).join('');
+    return `<div class="team-card">
+      <div class="team-format">${escHtml(team.format)}</div>
+      <div class="team-name">${escHtml(team.name)}</div>
+      <div class="team-pokemon">${chips||'<span style="color:var(--muted);font-size:13px">Empty team</span>'}</div>
+      <div class="team-actions">
+        <button class="btn-export" onclick="openExport('${team.id}')">EXPORT SHOWDOWN</button>
+        <button class="btn-delete" onclick="deleteTeam('${team.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function parsePokemonNames(data) {
+  if (!data) return [];
+  const names = [];
+  for (const line of data.split('\n')) {
+    const t = line.trim();
+    if (!t || t.startsWith('-') || t.includes(':') || t.startsWith('Ability') || t.startsWith('EVs') || t.startsWith('Nature') || t.startsWith('IVs') || t.startsWith('Tera')) continue;
+    const name = t.split('@')[0].replace(/\(.*?\)/g,'').trim();
+    if (name && name.length > 1 && names.length < 6) names.push(name);
+  }
+  return names;
+}
+
+function openExport(teamId) {
+  const team = window._teams?.find(t => t.id === teamId);
+  if (!team) return;
+  document.getElementById('modal-team-name').textContent = team.name.toUpperCase();
+  document.getElementById('export-content').textContent = team.data;
+  document.getElementById('export-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('export-modal').classList.remove('open'); }
+
+function copyExport() {
+  navigator.clipboard.writeText(document.getElementById('export-content').textContent).then(() => {
+    const btn = document.querySelector('.btn-copy');
+    btn.textContent = '✓ COPIED!';
+    setTimeout(() => btn.textContent = 'COPY TO CLIPBOARD', 2000);
+  });
+}
+
+async function deleteTeam(teamId) {
+  if (!confirm('Delete this team?')) return;
+  await sb.from('teams').delete().eq('id', teamId);
+  loadTeams();
+}
+
+function showToast(msg, type='success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('export-modal').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key==='Enter') {
+    const isLogin = document.getElementById('tab-login').style.display !== 'none';
+    isLogin ? doLogin() : doRegister();
+  }
+});
+</script>
+</body>
+</html>
