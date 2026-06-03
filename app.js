@@ -138,11 +138,23 @@ async function loadTeams() {
   const { data, error } = await supabase.from('teams').select('*').order('updated_at', { ascending: false });
   if (error) { toast('Error cargando equipos: ' + error.message, 'error'); console.error('[DB]', error); return; }
   state.teams = (data || []).map(t => ({ ...t, pokemon: t.pokemon || [] }));
-  // Always select the most recent team (or keep current if still exists)
   const currentExists = state.activeTeamId && state.teams.some(t => t.id === state.activeTeamId);
   if (!currentExists) state.activeTeamId = state.teams[0]?.id || null;
   state.activeSlotIdx = null;
   renderAll();
+  // Hydrate sprites/stats for all pokemon in background
+  for (const team of state.teams) {
+    for (const p of team.pokemon) {
+      if (p.name && !p.sprite) {
+        fetchPokemonData(p.name).then(d => {
+          if (!d) return;
+          p.types = d.types; p.sprite = d.sprite; p.shinySprite = d.shinySprite;
+          p.abilities = d.abilities; p.legalMoves = d.legalMoves; p.baseStats = d.baseStats;
+          renderAll();
+        });
+      }
+    }
+  }
   console.log('[DB] Loaded', state.teams.length, 'teams');
 }
 
@@ -154,9 +166,7 @@ async function saveTeam(team) {
       name: p.name, nickname: p.nickname, item: p.item, ability: p.ability,
       nature: p.nature, shiny: p.shiny, gender: p.gender, level: p.level,
       teraType: p.teraType || '',
-      moves: p.moves, evs: p.evs, types: p.types,
-      sprite: p.sprite, shinySprite: p.shinySprite, baseStats: p.baseStats,
-      abilities: p.abilities, legalMoves: p.legalMoves
+      moves: p.moves, evs: p.evs,
     } : null).filter(Boolean),
     user_id: state.user.id,
     updated_at: new Date().toISOString()
@@ -918,14 +928,12 @@ window.handleAuthSubmit = async () => {
 };
 window.handleAuthTabSwitch = (tab) => { document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab)); };
 window.handleLogout = async () => {
-  // Reset state and UI immediately (optimistic logout)
   state.user = null; state.teams = []; state.activeTeamId = null; state.activeSlotIdx = null;
   const overlay = document.getElementById('auth-overlay');
   const userInfo = document.getElementById('user-info');
   if (overlay) overlay.style.display = 'flex';
   if (userInfo) userInfo.innerHTML = '';
   renderAll();
-  // Fire signOut in background
   try { await supabase.auth.signOut(); } catch(e) { console.warn('signOut error:', e); }
 };
 
