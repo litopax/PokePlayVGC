@@ -883,10 +883,57 @@
     opacity: 0; transition: opacity 0.3s; pointer-events: none;
   }
   .save-indicator.show { opacity: 1; }
+
+  /* ── Title formatting toolbar ── */
+  .title-toolbar {
+    display: none; position: absolute; z-index: 999;
+    background: #12121f; border: 0.5px solid rgba(0,220,255,0.25);
+    border-radius: 8px; padding: 4px 6px;
+    gap: 2px; align-items: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.6);
+  }
+  .title-toolbar.visible { display: flex; }
+  .tt-btn {
+    width: 28px; height: 28px; border-radius: 5px;
+    border: none; background: transparent;
+    color: #d8f8ff; font-size: 13px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.1s; font-family: inherit;
+  }
+  .tt-btn:hover { background: rgba(0,220,255,0.12); }
+  .tt-btn.active { background: rgba(0,220,255,0.2); color: #00e5ff; }
+  .tt-sep { width: 0.5px; height: 18px; background: rgba(255,255,255,0.15); margin: 0 3px; }
+  .tt-color {
+    width: 20px; height: 20px; border-radius: 50%; cursor: pointer;
+    border: 1.5px solid rgba(255,255,255,0.2); transition: transform 0.1s;
+    flex-shrink: 0;
+  }
+  .tt-color:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.5); }
+  #hd-title { outline: none; cursor: text; }
+  #hd-title:focus { 
+    background: rgba(0,220,255,0.04); 
+    border-radius: 4px; 
+    padding: 2px 6px;
+  }
 </style>
 </head>
 
 <body>
+
+<div class="title-toolbar" id="titleToolbar">
+  <button class="tt-btn" id="tt-bold" onclick="execFmt('bold')" title="Negrita"><b>B</b></button>
+  <button class="tt-btn" id="tt-italic" onclick="execFmt('italic')" title="Cursiva"><i>I</i></button>
+  <button class="tt-btn" id="tt-underline" onclick="execFmt('underline')" title="Subrayado"><u>U</u></button>
+  <div class="tt-sep"></div>
+  <div class="tt-color" style="background:#00e5ff" onclick="execFmt('foreColor','#00e5ff')" title="Cyan"></div>
+  <div class="tt-color" style="background:#64dc82" onclick="execFmt('foreColor','#64dc82')" title="Verde"></div>
+  <div class="tt-color" style="background:#c8b8ff" onclick="execFmt('foreColor','#c8b8ff')" title="Violeta"></div>
+  <div class="tt-color" style="background:#f0c030" onclick="execFmt('foreColor','#f0c030')" title="Amarillo"></div>
+  <div class="tt-color" style="background:#ff8080" onclick="execFmt('foreColor','#ff8080')" title="Rojo"></div>
+  <div class="tt-color" style="background:#d8f8ff" onclick="execFmt('foreColor','#d8f8ff')" title="Blanco"></div>
+  <div class="tt-sep"></div>
+  <button class="tt-btn" onclick="execFmt('removeFormat')" title="Quitar formato" style="font-size:11px;">✕</button>
+</div>
 
 <div class="auth-bar">
   <div class="auth-bar-left">
@@ -4623,7 +4670,9 @@ async function saveTeam() {
     await _sb.from('teams').update({ team_data: teamData }).eq('id', _currentTeamId);
     await _saveVersion(_currentTeamId, teamData);
   } else {
-    const name = prompt('Nombre del equipo:', 'Mi equipo') || 'Mi equipo';
+    // Get name from the editable title in the app
+    const titleEl = document.getElementById('hd-title');
+    const name = titleEl ? (titleEl.innerText.trim() || 'Mi equipo') : 'Mi equipo';
     const { data, error } = await _sb.from('teams').insert({
       user_id: _currentUser.id, name, team_data: teamData,
     }).select().single();
