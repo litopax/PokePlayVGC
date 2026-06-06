@@ -4653,9 +4653,12 @@ async function _initAuth() {
         team.splice(0, team.length, ...data.team_data);
         render();
       }
-      // Set title to saved team name
+      // Set title to saved team name (clear span markup first)
       const titleEl = document.getElementById('hd-title');
-      if (titleEl) titleEl.innerText = data.name || 'Mi equipo';
+      if (titleEl) {
+        titleEl.innerHTML = '';
+        titleEl.textContent = data.name || 'Mi equipo';
+      }
     }
   }
 }
@@ -4669,13 +4672,13 @@ async function saveTeam() {
 
   if (_currentTeamId) {
     const titleEl = document.getElementById('hd-title');
-    const name = titleEl ? (titleEl.innerText.trim() || 'Mi equipo') : 'Mi equipo';
+    const name = titleEl ? (titleEl.textContent.trim() || 'Mi equipo') : 'Mi equipo';
     await _sb.from('teams').update({ team_data: teamData, name }).eq('id', _currentTeamId);
     await _saveVersion(_currentTeamId, teamData);
   } else {
     // Get name from the editable title in the app
     const titleEl = document.getElementById('hd-title');
-    const name = titleEl ? (titleEl.innerText.trim() || 'Mi equipo') : 'Mi equipo';
+    const name = titleEl ? (titleEl.textContent.trim() || 'Mi equipo') : 'Mi equipo';
     const { data, error } = await _sb.from('teams').insert({
       user_id: _currentUser.id, name, team_data: teamData,
     }).select().single();
