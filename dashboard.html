@@ -131,17 +131,34 @@ body::before {
 
 /* Pokémon sprite row */
 .team-sprites {
-  display: flex; gap: 4px; align-items: center;
-  margin-bottom: 14px; min-height: 40px;
+  display: flex; gap: 2px; align-items: flex-end;
+  margin-bottom: 10px; min-height: 48px; overflow: hidden;
+}
+.team-sprite-wrap {
+  width: 44px; height: 44px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
 }
 .team-sprite {
-  width: 40px; height: 40px; object-fit: contain;
-  image-rendering: pixelated; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+  max-width: 44px; max-height: 44px; width: auto; height: auto;
+  object-fit: contain; image-rendering: pixelated;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
 }
 .team-sprite-placeholder {
-  width: 40px; height: 40px; border-radius: 50%;
+  width: 36px; height: 36px; border-radius: 50%;
   background: rgba(255,255,255,0.04);
   border: 0.5px dashed rgba(255,255,255,0.1);
+}
+.team-items {
+  display: flex; gap: 4px; align-items: center;
+  margin-bottom: 12px; min-height: 22px; flex-wrap: wrap;
+}
+.team-item-img {
+  width: 22px; height: 22px; object-fit: contain;
+  image-rendering: pixelated;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.5));
+}
+.team-item-placeholder {
+  width: 22px; height: 22px;
 }
 
 .team-card-footer {
@@ -359,9 +376,20 @@ async function loadTeams() {
       const sprites = Array.from({length: 6}, (_, i) => {
         const p = pokes[i];
         if (p?.spriteId) {
-          return `<img class="team-sprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${p.spriteId}.gif" onerror="this.style.display='none'">`;
+          return `<div class="team-sprite-wrap"><img class="team-sprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${p.spriteId}.gif" onerror="this.style.visibility='hidden'"></div>`;
         }
-        return `<div class="team-sprite-placeholder"></div>`;
+        return `<div class="team-sprite-wrap"><div class="team-sprite-placeholder"></div></div>`;
+      }).join('');
+
+      // Items row
+      const items = Array.from({length: 6}, (_, i) => {
+        const p = pokes[i];
+        if (p?.itemSlug) {
+          // Try ITEM_IMAGES first (inline base64), fallback to PokeAPI
+          const src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${p.itemSlug}.png`;
+          return `<img class="team-item-img" src="${src}" title="${p.item || p.itemSlug}" onerror="this.style.visibility='hidden'">`;
+        }
+        return `<div class="team-item-placeholder"></div>`;
       }).join('');
 
       const date = new Date(t.updated_at).toLocaleDateString('es', { day:'2-digit', month:'short', year:'numeric' });
@@ -372,6 +400,7 @@ async function loadTeams() {
             <div class="team-card-name">${escHtml(t.name)}</div>
             <div class="team-card-meta">Modificado: ${date} · ${pokes.length} Pokémon</div>
             <div class="team-sprites">${sprites}</div>
+            <div class="team-items">${items}</div>
           </div>
           <div class="team-card-footer">
             <button class="tc-btn tc-open" onclick="openTeam('${t.id}')">✏️ Editar</button>
