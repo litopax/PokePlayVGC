@@ -251,6 +251,35 @@ body::before {
   opacity: 0; transition: opacity 0.3s; pointer-events: none;
 }
 .notif.show { opacity: 1; }
+
+  /* ── Confirm modal ── */
+  .confirm-bg {
+    position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .confirm-box {
+    background: #0d1a22; border: 0.5px solid rgba(0,220,255,0.2);
+    border-radius: 12px; padding: 24px; width: 340px; max-width: 90vw;
+    font-family: 'DM Sans', sans-serif; text-align: center;
+  }
+  .confirm-icon { font-size: 32px; margin-bottom: 12px; }
+  .confirm-title { font-size: 14px; font-weight: 700; color: #d8f8ff; margin-bottom: 8px; }
+  .confirm-text { font-size: 12px; color: #5a9aaa; margin-bottom: 20px; line-height: 1.5; }
+  .confirm-btns { display: flex; gap: 8px; justify-content: center; }
+  .confirm-btn {
+    padding: 8px 20px; border-radius: 8px; font-size: 12px;
+    font-weight: 700; cursor: pointer; border: 0.5px solid;
+    font-family: 'DM Sans', sans-serif; transition: all 0.15s; min-width: 90px;
+  }
+  .confirm-btn-cancel {
+    background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.15); color: #5a9aaa;
+  }
+  .confirm-btn-cancel:hover { color: #d8f8ff; background: rgba(255,255,255,0.1); }
+  .confirm-btn-danger {
+    background: rgba(255,80,80,0.1); border-color: rgba(255,80,80,0.4); color: #ff8080;
+  }
+  .confirm-btn-danger:hover { background: rgba(255,80,80,0.2); }
 </style>
 </head>
 <body>
@@ -379,11 +408,17 @@ function openTeam(teamId) {
 
 async function deleteTeam(teamId, e) {
   e.stopPropagation();
-  if (!confirm('¿Eliminar este equipo? Esta acción no se puede deshacer.')) return;
-  const { error } = await sb.from('teams').delete().eq('id', teamId);
-  if (error) return alert('Error: ' + error.message);
-  notify('Equipo eliminado');
-  loadTeams();
+  showConfirm(
+    '¿Eliminar equipo?',
+    'Esta acción no se puede deshacer.',
+    async () => {
+      const { error } = await sb.from('teams').delete().eq('id', teamId);
+      if (error) return alert('Error: ' + error.message);
+      notify('Equipo eliminado');
+      loadTeams();
+    }
+  );
+  return; // actual delete happens inside callback
 }
 
 function notify(msg, duration = 2000) {
@@ -447,6 +482,25 @@ async function restoreVersion(teamId, versionNumber) {
   document.querySelector('.modal-bg')?.remove();
   notify('Versión restaurada');
   loadTeams();
+}
+
+function showConfirm(title, text, onConfirm) {
+  const bg = document.createElement('div');
+  bg.className = 'confirm-bg';
+  bg.innerHTML = `
+    <div class="confirm-box">
+      <div class="confirm-icon">🗑️</div>
+      <div class="confirm-title">${title}</div>
+      <div class="confirm-text">${text}</div>
+      <div class="confirm-btns">
+        <button class="confirm-btn confirm-btn-cancel" id="confirmCancel">Cancelar</button>
+        <button class="confirm-btn confirm-btn-danger" id="confirmOk">Eliminar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(bg);
+  bg.querySelector('#confirmCancel').addEventListener('click', () => bg.remove());
+  bg.querySelector('#confirmOk').addEventListener('click', () => { bg.remove(); onConfirm(); });
+  bg.addEventListener('click', e => { if (e.target === bg) bg.remove(); });
 }
 
 async function doLogout() {
