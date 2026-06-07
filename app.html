@@ -942,7 +942,7 @@
   </div>
   <div class="auth-bar-right">
     <button class="auth-btn auth-btn-back" onclick="goToDashboard()">← Mis equipos</button>
-    <button class="auth-btn auth-btn-save" onclick="saveTeam()">💾 Guardar</button>
+
     <button class="auth-btn auth-btn-logout" onclick="doLogout()">Salir</button>
   </div>
 </div>
@@ -4663,10 +4663,13 @@ async function _initAuth() {
   }
 }
 
-function goToDashboard() { window.location.href = 'dashboard.html'; }
+async function goToDashboard() {
+  if (_currentTeamId) await saveTeam(true);
+  window.location.href = 'dashboard.html';
+}
 function doLogout() { _sb.auth.signOut().then(() => { window.location.href = 'index.html'; }); }
 
-async function saveTeam() {
+async function saveTeam(silent = false) {
   if (!_currentUser) return;
   const teamData = team;
 
@@ -4687,10 +4690,12 @@ async function saveTeam() {
     await _saveVersion(_currentTeamId, teamData);
   }
 
-  const ind = document.getElementById('saveIndicator');
-  ind.textContent = '✓ Guardado';
-  ind.classList.add('show');
-  setTimeout(() => ind.classList.remove('show'), 2000);
+  if (!silent) {
+    const ind = document.getElementById('saveIndicator');
+    ind.textContent = '✓ Guardado';
+    ind.classList.add('show');
+    setTimeout(() => ind.classList.remove('show'), 2000);
+  }
 }
 
 async function _saveVersion(teamId, teamData) {
