@@ -431,11 +431,13 @@ function escHtml(str) {
 
 function newTeam() {
   sessionStorage.removeItem('loadTeamId');
+  sessionStorage.setItem('autoEdit', '1');
   window.location.href = 'app.html';
 }
 
 function openTeam(teamId) {
   sessionStorage.setItem('loadTeamId', teamId);
+  sessionStorage.setItem('autoEdit', '1');
   window.location.href = 'app.html';
 }
 
