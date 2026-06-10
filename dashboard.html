@@ -393,7 +393,7 @@ async function loadTeams() {
       const pokeGrid = Array.from({length: 6}, (_, i) => {
         const p = pokes[i];
         const sprite = p?.spriteId
-          ? `<div class="team-sprite-wrap"><img class="team-sprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${p.spriteId}.gif" onerror="this.style.visibility='hidden'"></div>`
+          ? `<div class="team-sprite-wrap"><img class="team-sprite" src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${p.shiny?'shiny/'+p.spriteId+'.gif':p.spriteId+'.gif'}" onerror="this.style.visibility='hidden'"></div>`
           : `<div class="team-sprite-wrap"><div class="team-sprite-placeholder"></div></div>`;
 
         // Items: try PokeAPI, fallback to Showdown item sprites
