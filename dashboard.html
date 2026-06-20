@@ -421,12 +421,12 @@ try {
   if (_sl && DASHBOARD_I18N[_sl]) _lang = _sl;
 } catch(e) {}
 
-function t(key) { return (DASHBOARD_I18N[_lang] || DASHBOARD_I18N.en)[key] || key; }
+function tr(key) { return (DASHBOARD_I18N[_lang] || DASHBOARD_I18N.en)[key] || key; }
 
 function applyLang() {
-  document.getElementById('userName').textContent = t('loading');
-  document.getElementById('btnLogout').textContent = t('logout');
-  document.getElementById('pageTitle').textContent = t('pageTitle');
+  document.getElementById('userName').textContent = tr('loading');
+  document.getElementById('btnLogout').textContent = tr('logout');
+  document.getElementById('pageTitle').textContent = tr('pageTitle');
 }
 
 let _user = null;
@@ -455,7 +455,7 @@ async function loadTeams() {
   const grid = document.getElementById('teamsGrid');
 
   if (error) {
-    grid.innerHTML = `<div class="empty-state"><div class="empty-state-title">${t('errorLoading')}</div><div class="empty-state-sub">${error.message}</div></div>`;
+    grid.innerHTML = `<div class="empty-state"><div class="empty-state-title">${tr('errorLoading')}</div><div class="empty-state-sub">${error.message}</div></div>`;
     return;
   }
 
@@ -465,8 +465,8 @@ async function loadTeams() {
     html += `
       <div class="empty-state">
         <div class="empty-state-icon">🎮</div>
-        <div class="empty-state-title">${t('noTeams')}</div>
-        <div class="empty-state-sub">${t('noTeamsSub')}</div>
+        <div class="empty-state-title">${tr('noTeams')}</div>
+        <div class="empty-state-sub">${tr('noTeamsSub')}</div>
       </div>`;
   } else {
     teams.forEach(t => {
@@ -495,12 +495,12 @@ async function loadTeams() {
         <div class="team-card">
           <div class="team-card-body" onclick="openTeam('${t.id}')">
             <div class="team-card-name">${escHtml(t.name)}</div>
-            <div class="team-card-meta">${t('modified')}: ${date} · ${pokes.length} Pokémon</div>
+            <div class="team-card-meta">${tr('modified')}: ${date} · ${pokes.length} Pokémon</div>
             <div class="team-poke-grid">${pokeGrid}</div>
           </div>
           <div class="team-card-footer">
-            <button class="tc-btn tc-open" onclick="editTeam('${t.id}')">${t('editBtn')}</button>
-            <button class="tc-btn tc-history" onclick="showHistory('${t.id}', '${escHtml(t.name)}')">${t('historyBtn')}</button>
+            <button class="tc-btn tc-open" onclick="editTeam('${t.id}')">${tr('editBtn')}</button>
+            <button class="tc-btn tc-history" onclick="showHistory('${t.id}', '${escHtml(t.name)}')">${tr('historyBtn')}</button>
             <button class="tc-btn tc-delete" onclick="deleteTeam('${t.id}', event)">🗑️</button>
           </div>
         </div>`;
@@ -511,7 +511,7 @@ async function loadTeams() {
   html += `
     <div class="team-card-new" onclick="newTeam()">
       <div class="team-card-new-icon">+</div>
-      <span>${t('newTeam')}</span>
+      <span>${tr('newTeam')}</span>
     </div>`;
 
   grid.innerHTML = html;
@@ -544,12 +544,12 @@ function editTeam(teamId) {
 async function deleteTeam(teamId, e) {
   e.stopPropagation();
   showConfirm(
-    t('deleteTitle'),
-    t('deleteMsg'),
+    tr('deleteTitle'),
+    tr('deleteMsg'),
     async () => {
       const { error } = await sb.from('teams').delete().eq('id', teamId);
       if (error) return alert('Error: ' + error.message);
-      notify(t('teamDeleted'));
+      notify(tr('teamDeleted'));
       loadTeams();
     }
   );
@@ -576,7 +576,7 @@ async function showHistory(teamId, teamName) {
   modal.className = 'modal-bg';
 
   const rows = versions.length === 0
-    ? `<div class="modal-empty">${t('noHistory')}</div>`
+    ? `<div class="modal-empty">${tr('noHistory')}</div>`
     : versions.map(v => `
         <div class="modal-item">
           <div class="modal-item-info">
@@ -584,13 +584,13 @@ async function showHistory(teamId, teamName) {
             <div class="modal-item-meta">${new Date(v.created_at).toLocaleString('es')}</div>
           </div>
           <button class="tc-btn tc-open" style="width:auto;white-space:nowrap;"
-            onclick="restoreVersion('${teamId}', ${v.version_number})">${t('restore')}</button>
+            onclick="restoreVersion('${teamId}', ${v.version_number})">${tr('restore')}</button>
         </div>`).join('');
 
   modal.innerHTML = `
     <div class="modal">
       <div class="modal-hdr">
-        <span class="modal-title">${t('historyLabel')} · ${escHtml(teamName)}</span>
+        <span class="modal-title">${tr('historyLabel')} · ${escHtml(teamName)}</span>
         <button class="modal-close" onclick="this.closest('.modal-bg').remove()">✕</button>
       </div>
       <div class="modal-list">${rows}</div>
@@ -615,7 +615,7 @@ async function restoreVersion(teamId, versionNumber) {
   await sb.from('teams').update({ team_data: data.team_data }).eq('id', teamId);
 
   document.querySelector('.modal-bg')?.remove();
-  notify(t('versionRestored'));
+  notify(tr('versionRestored'));
   loadTeams();
 }
 
@@ -749,8 +749,8 @@ function showConfirm(title, text, onConfirm) {
       <div class="confirm-title">${title}</div>
       <div class="confirm-text">${text}</div>
       <div class="confirm-btns">
-        <button class="confirm-btn confirm-btn-cancel" id="confirmCancel">${t('cancel')}</button>
-        <button class="confirm-btn confirm-btn-danger" id="confirmOk">${t('deleteConfirm')}</button>
+        <button class="confirm-btn confirm-btn-cancel" id="confirmCancel">${tr('cancel')}</button>
+        <button class="confirm-btn confirm-btn-danger" id="confirmOk">${tr('deleteConfirm')}</button>
       </div>
     </div>`;
   document.body.appendChild(bg);
