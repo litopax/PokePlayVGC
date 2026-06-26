@@ -21,7 +21,7 @@ body{background:#040d16;font-family:'DM Sans',sans-serif;color:var(--text);min-h
 /* Grid */
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:24px;max-width:1100px;margin:0 auto}
 @media(max-width:768px){.grid{grid-template-columns:repeat(2,1fr);gap:10px;padding:14px}}
-@media(max-width:480px){.grid{grid-template-columns:1fr;padding:10px}.share-bar{flex-wrap:wrap;padding:10px 12px 0;gap:6px}.share-wa-btn,.copy-link-btn,.copy-showdown-btn{flex:1;justify-content:center;font-size:10px;padding:8px 10px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr;padding:10px}.share-bar{flex-wrap:wrap;padding:10px 12px 0;gap:6px}.share-wa-btn,.copy-link-btn,.copy-showdown-btn,.clone-team-btn{flex:1;min-width:calc(50% - 3px);justify-content:center;font-size:10px;padding:8px 6px}}
 
 /* Card */
 .card{width:100%;background:linear-gradient(145deg,rgba(7,24,40,0.98) 0%,rgba(4,13,22,1) 100%);border-radius:10px;overflow:hidden;position:relative;border:0.5px solid rgba(0,220,255,0.18);box-shadow:0 4px 24px rgba(0,0,0,0.35),inset 0 0.5px 0 rgba(255,255,255,0.05);animation:fadeUp 0.5s ease both;transition:box-shadow 0.25s,border-color 0.25s,transform 0.25s}
@@ -107,6 +107,9 @@ body{background:#040d16;font-family:'DM Sans',sans-serif;color:var(--text);min-h
 .copy-link-btn:hover{background:rgba(0,220,255,0.14)}
 .copy-showdown-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:rgba(255,215,0,0.07);border:0.5px solid rgba(255,215,0,0.28);color:#ffd700;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
 .copy-showdown-btn:hover{background:rgba(255,215,0,0.14)}
+.clone-team-btn{display:none;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:rgba(100,220,130,0.1);border:0.5px solid rgba(100,220,130,0.4);color:#64dc82;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.clone-team-btn:hover{background:rgba(100,220,130,0.18)}
+.clone-team-btn.visible{display:inline-flex}
 </style>
 </head>
 <body>
@@ -132,6 +135,7 @@ body{background:#040d16;font-family:'DM Sans',sans-serif;color:var(--text);min-h
     <button class="share-wa-btn" id="shareWaBtn">📱 WhatsApp</button>
     <button class="copy-link-btn" id="copyLinkBtn">🔗 Copiar link</button>
     <button class="copy-showdown-btn" id="copyShowdownBtn">📋 Código Showdown</button>
+    <button class="clone-team-btn" id="cloneTeamBtn">⊕ Clonar equipo</button>
   </div>
   <div class="grid" id="grid"></div>
 </div>
@@ -310,9 +314,9 @@ function toShowdownText(team) {
 async function loadTeam() {
   // ── Apply language preference ──────────────────────────────────────────────
   const VB18N = {
-    en:    { wa: '📱 WhatsApp', copy: '🔗 Copy link', copied: '✓ Copied', showdown: '📋 Showdown code', showdownCopied: '✓ Copied' },
-    es_la: { wa: '📱 WhatsApp', copy: '🔗 Copiar link', copied: '✓ Copiado', showdown: '📋 Código Showdown', showdownCopied: '✓ Copiado' },
-    es_es: { wa: '📱 WhatsApp', copy: '🔗 Copiar link', copied: '✓ Copiado', showdown: '📋 Código Showdown', showdownCopied: '✓ Copiado' },
+    en:    { wa: '📱 WhatsApp', copy: '🔗 Copy link', copied: '✓ Copied', showdown: '📋 Showdown code', showdownCopied: '✓ Copied',  clone: 'Clone team' },
+    es_la: { wa: '📱 WhatsApp', copy: '🔗 Copiar link', copied: '✓ Copiado', showdown: '📋 Código Showdown', showdownCopied: '✓ Copiado', clone: 'Clonar equipo' },
+    es_es: { wa: '📱 WhatsApp', copy: '🔗 Copiar link', copied: '✓ Copiado', showdown: '📋 Código Showdown', showdownCopied: '✓ Copiado', clone: 'Clonar equipo' },
   };
   let _vlang = 'en';
   try { const s = localStorage.getItem('pokemon_champions_lang'); if (VB18N[s]) _vlang = s; } catch(e) {}
@@ -369,6 +373,38 @@ async function loadTeam() {
         setTimeout(() => btn.textContent = orig, 2000);
       });
     };
+
+    // ── Clone button: show only if user is logged in ──────────────────────────
+    const { data: { session } } = await _sb.auth.getSession();
+    if (session) {
+      const cloneBtn = document.getElementById('cloneTeamBtn');
+      cloneBtn.classList.add('visible');
+      cloneBtn.textContent = `⊕ ${_vt('clone')}`;
+      cloneBtn.onclick = async () => {
+        cloneBtn.disabled = true;
+        cloneBtn.textContent = '…';
+        try {
+          // Get user profile id
+          const { data: profile } = await _sb
+            .from('profiles').select('id').eq('id', session.user.id).single();
+          if (!profile) throw new Error('No profile');
+
+          const { error: insertErr } = await _sb.from('teams').insert({
+            user_id:   session.user.id,
+            name:      `Copia de ${teamName}`,
+            team_data: team,
+          });
+          if (insertErr) throw insertErr;
+          cloneBtn.textContent = '✓ Clonado';
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 900);
+        } catch(err) {
+          console.error(err);
+          cloneBtn.textContent = '⊕ Error, intentá de nuevo';
+          cloneBtn.disabled = false;
+        }
+      };
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     document.getElementById('loadingEl').style.display = 'none';
     document.getElementById('contentEl').style.display = 'block';
