@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ver Equipo Pokémon</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#020d12;--bg2:#061820;--bg3:#0a2028;--border:rgba(0,220,255,0.12);--text:#d8f8ff;--muted:#5a9aaa;--accent:#00e5ff}
+body{background:#040d16;font-family:'DM Sans',sans-serif;color:var(--text);min-height:100vh}
+
+/* Header */
+.view-header{background:rgba(2,13,18,0.95);border-bottom:0.5px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);gap:10px}
+.view-logo{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--accent);flex-shrink:0}
+.view-team-name{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1px;color:var(--text);opacity:0.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:center}
+.view-badge{font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:rgba(0,220,255,0.07);border:0.5px solid rgba(0,220,255,0.2);border-radius:20px;padding:3px 10px;flex-shrink:0}
+@media(max-width:500px){.view-header{padding:10px 14px}.view-logo{font-size:16px}.view-team-name{font-size:14px}.view-badge{display:none}}
+
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:24px;max-width:1100px;margin:0 auto}
+@media(max-width:768px){.grid{grid-template-columns:repeat(2,1fr);gap:10px;padding:14px}}
+@media(max-width:480px){.grid{grid-template-columns:1fr;padding:10px}.share-bar{flex-wrap:wrap;padding:10px 12px 0;gap:6px}.share-wa-btn,.copy-link-btn,.copy-showdown-btn,.clone-team-btn{flex:1;min-width:calc(50% - 3px);justify-content:center;font-size:10px;padding:8px 6px}}
+
+/* Card */
+.card{width:100%;background:linear-gradient(145deg,rgba(7,24,40,0.98) 0%,rgba(4,13,22,1) 100%);border-radius:10px;overflow:hidden;position:relative;border:0.5px solid rgba(0,220,255,0.18);box-shadow:0 4px 24px rgba(0,0,0,0.35),inset 0 0.5px 0 rgba(255,255,255,0.05);animation:fadeUp 0.5s ease both;transition:box-shadow 0.25s,border-color 0.25s,transform 0.25s}
+.card:hover{border-color:rgba(0,220,255,0.38);box-shadow:0 8px 40px rgba(0,200,255,0.15),0 0 0 0.5px rgba(0,220,255,0.15);transform:translateY(-2px)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.card.is-shiny{box-shadow:0 0 0 1.5px #ffd700,0 0 12px 2px rgba(255,215,0,0.35);animation:shinyGlow 3s ease-in-out infinite}
+@keyframes shinyGlow{0%,100%{box-shadow:0 0 0 1.5px #ffd700,0 0 10px 1px rgba(255,215,0,0.3)}50%{box-shadow:0 0 0 1.5px #fff5a0,0 0 18px 4px rgba(255,245,160,0.5)}}
+@keyframes shinyBorder{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+
+/* Sprite */
+.sprite-area{position:relative;height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sprite-bg{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 70%,var(--type-color,#333) 0%,transparent 70%);opacity:0.25}
+.sprite-ring{position:absolute;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,var(--type-color,#333) 0%,transparent 70%);opacity:0.08}
+.sprite-img{width:150px;height:150px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.7));position:relative;z-index:1}
+.star-field{position:absolute;inset:0;pointer-events:none;z-index:2}
+.star{position:absolute;font-size:9px;color:#ffd700;opacity:0;line-height:1}
+@keyframes starTwinkle{0%,100%{opacity:0;transform:scale(0.4) rotate(0deg)}50%{opacity:0.9;transform:scale(1) rotate(20deg)}}
+
+/* Name bar */
+.name-bar{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 6px}
+.pokemon-name{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;line-height:1;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shiny-star{font-size:14px;color:#ffd700;margin-left:6px;flex-shrink:0}
+.type-pills{display:flex;gap:4px;flex-shrink:0}
+.type-pill{font-size:9px;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;padding:3px 7px 2px;border-radius:20px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+
+/* Stats */
+.stat-row{display:grid;grid-template-columns:34px 32px 1fr 28px;align-items:center;gap:6px;margin-bottom:5px}
+.stat-lbl{font-size:12px;font-weight:700;letter-spacing:0.4px;text-transform:uppercase;color:rgba(255,255,255,0.4);text-align:right;line-height:1}
+.stat-lbl.nat-up{color:#7090f8}
+.stat-lbl.nat-down{color:#f87070}
+.stat-val{font-size:12px;font-weight:700;color:var(--text);text-align:right;line-height:1}
+.stat-val.nat-up{color:#7090f8}
+.stat-val.nat-down{color:#f87070}
+.stat-bar-bg{height:7px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;position:relative}
+.stat-bar-fill{height:100%;border-radius:4px;background:var(--type-color,#7a7a9a);opacity:0.75;transition:width 0.6s cubic-bezier(0.4,0,0.2,1)}
+.stat-bar-ev{position:absolute;top:0;height:100%;background:#f0c030;border-radius:0 3px 3px 0;opacity:0.9}
+.stat-ev{font-size:12px;font-weight:700;color:#f0c030;text-align:left;min-width:20px}
+
+/* Moves */
+.move-row{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;border-radius:3px;margin-bottom:3px;gap:8px;border-left:2px solid rgba(140,100,255,0.5)}
+.move-left{display:flex;align-items:center;gap:7px;flex:1;min-width:0}
+.move-type-icon{width:18px;height:18px;object-fit:contain;flex-shrink:0;image-rendering:auto;border-radius:3px}
+.move-name{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1;text-transform:uppercase;letter-spacing:0.3px}
+.ability-name{font-size:12px;font-weight:700;color:var(--text);line-height:1;text-align:center;width:100%;text-transform:uppercase;letter-spacing:0.3px}
+.item-name{font-size:12px;font-weight:600;color:var(--text);line-height:1;text-transform:uppercase;letter-spacing:0.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Type pills colors */
+.t-normal{background:rgba(154,154,114,0.25);color:#d0d0a8;border:1px solid rgba(154,154,114,0.4)}
+.t-fire{background:rgba(224,74,0,0.25);color:#ff8040;border:1px solid rgba(224,74,0,0.4)}
+.t-water{background:rgba(41,128,200,0.25);color:#60b0f0;border:1px solid rgba(41,128,200,0.4)}
+.t-grass{background:rgba(74,140,32,0.25);color:#70c040;border:1px solid rgba(74,140,32,0.4)}
+.t-electric{background:rgba(216,184,0,0.25);color:#f0d040;border:1px solid rgba(216,184,0,0.4)}
+.t-ice{background:rgba(120,200,216,0.25);color:#90dde8;border:1px solid rgba(120,200,216,0.4)}
+.t-fighting{background:rgba(180,60,30,0.25);color:#e07050;border:1px solid rgba(180,60,30,0.4)}
+.t-poison{background:rgba(156,64,168,0.25);color:#c070d8;border:1px solid rgba(156,64,168,0.4)}
+.t-ground{background:rgba(180,140,60,0.25);color:#d4a860;border:1px solid rgba(180,140,60,0.4)}
+.t-flying{background:rgba(136,153,224,0.25);color:#a8b8f0;border:1px solid rgba(136,153,224,0.4)}
+.t-psychic{background:rgba(200,36,92,0.25);color:#f07898;border:1px solid rgba(200,36,92,0.4)}
+.t-bug{background:rgba(100,140,40,0.25);color:#90c040;border:1px solid rgba(100,140,40,0.4)}
+.t-rock{background:rgba(140,120,60,0.25);color:#c8a870;border:1px solid rgba(140,120,60,0.4)}
+.t-ghost{background:rgba(115,87,151,0.25);color:#a880d0;border:1px solid rgba(115,87,151,0.4)}
+.t-dark{background:rgba(74,58,44,0.35);color:#a08060;border:1px solid rgba(74,58,44,0.5)}
+.t-dragon{background:rgba(80,96,200,0.25);color:#8090e8;border:1px solid rgba(80,96,200,0.4)}
+.t-steel{background:rgba(170,170,192,0.2);color:#c0c8d8;border:1px solid rgba(170,170,192,0.35)}
+.t-fairy{background:rgba(214,133,173,0.25);color:#f0a8cc;border:1px solid rgba(214,133,173,0.4)}
+
+/* Loading / Error */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;color:var(--muted)}
+.loading-spinner{width:40px;height:40px;border:3px solid rgba(0,220,255,0.15);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.error-msg{text-align:center;padding:60px 20px;color:var(--muted)}
+.error-msg h2{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--text);margin-bottom:8px;letter-spacing:1px}
+
+/* Footer */
+.view-footer{text-align:center;padding:24px;color:var(--muted);font-size:11px;border-top:0.5px solid var(--border);margin-top:20px}
+.view-footer a{color:var(--accent);text-decoration:none}
+.view-footer a:hover{text-decoration:underline}
+
+/* WhatsApp share */
+.share-bar{display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 24px 0;max-width:1100px;margin:0 auto}
+.share-wa-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:rgba(96,208,96,0.1);border:0.5px solid rgba(96,208,96,0.3);color:#60d060;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.share-wa-btn:hover{background:rgba(96,208,96,0.18)}
+.copy-link-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:rgba(0,220,255,0.07);border:0.5px solid rgba(0,220,255,0.25);color:var(--accent);font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.copy-link-btn:hover{background:rgba(0,220,255,0.14)}
+.copy-showdown-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:rgba(255,215,0,0.07);border:0.5px solid rgba(255,215,0,0.28);color:#ffd700;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.copy-showdown-btn:hover{background:rgba(255,215,0,0.14)}
+.clone-team-btn{display:none;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;background:rgba(100,220,130,0.1);border:0.5px solid rgba(100,220,130,0.4);color:#64dc82;font-size:11px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;font-family:'DM Sans',sans-serif}
+.clone-team-btn:hover{background:rgba(100,220,130,0.18)}
+.clone-team-btn.visible{display:inline-flex}
+</style>
+</head>
+<body>
+
+<header class="view-header">
+  <div class="view-logo">VGC Builder</div>
+  <div class="view-team-name" id="teamNameHeader">—</div>
+  <div class="view-badge">Vista pública</div>
+</header>
+
+<div id="loadingEl" class="loading">
+  <div class="loading-spinner"></div>
+  <div>Cargando equipo…</div>
+</div>
+
+<div id="errorEl" class="error-msg" style="display:none">
+  <h2>Equipo no encontrado</h2>
+  <p>El link puede haber expirado o ser inválido.</p>
+</div>
+
+<div id="contentEl" style="display:none">
+  <div class="share-bar">
+    <button class="share-wa-btn" id="shareWaBtn">📱 WhatsApp</button>
+    <button class="copy-link-btn" id="copyLinkBtn">🔗 Copiar link</button>
+    <button class="copy-showdown-btn" id="copyShowdownBtn">📋 Código Showdown</button>
+    <button class="clone-team-btn" id="cloneTeamBtn">⊕ Clonar equipo</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+
+<footer class="view-footer">
+  Creado con <a href="./app.html">VGC Builder</a> · Solo lectura
+</footer>
+
+<script>
+const _SB_URL = 'https://altfgsmuwbifuojirugg.supabase.co';
+const _SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFsdGZnc211d2JpZnVvamlydWdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAyNTc2NjksImV4cCI6MjA5NTgzMzY2OX0.2Xf4hOr8aXW9Qa5e-oS3KKg3ojuedbE5VFDFwEpJz44';
+const _sb = supabase.createClient(_SB_URL, _SB_KEY);
+
+const TYPE_COLOR = {
+  ghost:'#735797',poison:'#9c40a8',fire:'#e04a00',normal:'#9a9a72',
+  water:'#2980c8',fairy:'#d685ad',dragon:'#5060c8',electric:'#d8b800',
+  flying:'#8899e0',steel:'#aaaac0',ice:'#78c8d8',dark:'#4a3a2c',
+  psychic:'#c8245c',fighting:'#b43c1e',grass:'#4a8c20',ground:'#b48c3c',
+  rock:'#8c783c',bug:'#648c28'
+};
+
+const MAX_STAT = { HP:400, Atk:300, Def:350, SpA:300, SpD:350, Spe:300 };
+
+const NATURE_MOD = {
+  Hardy:[0,0,0,0,0],Lonely:[1,-1,0,0,0],Brave:[1,0,0,0,-1],Adamant:[1,0,-1,0,0],Naughty:[1,0,0,-1,0],
+  Bold:[-1,1,0,0,0],Docile:[0,0,0,0,0],Relaxed:[0,1,0,0,-1],Impish:[0,1,-1,0,0],Lax:[0,1,0,-1,0],
+  Timid:[-1,0,0,0,1],Hasty:[0,-1,0,0,1],Serious:[0,0,0,0,0],Jolly:[0,0,-1,0,1],Naive:[0,0,0,-1,1],
+  Modest:[-1,0,1,0,0],Mild:[0,-1,1,0,0],Quiet:[0,0,1,0,-1],Bashful:[0,0,0,0,0],Rash:[0,0,1,-1,0],
+  Calm:[-1,0,0,1,0],Gentle:[0,-1,0,1,0],Sassy:[0,0,0,1,-1],Careful:[0,0,-1,1,0],Quirky:[0,0,0,0,0],
+};
+
+const TYPE_ICON_URL = {
+  steel:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PGRlZnM+PHN0eWxlPi5jbHMtMXtmaWxsOiNmZmZ9PC9zdHlsZT48L2RlZnM+PGc+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiM2MGExYjgiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik00MSAyNy4zNWw5LjE4IDMyLjAyIDE3LjM3LTEyLjYyLTguMDMtMjQuNzFMNDEgMjcuMzV6TTUyLjMgMzcuNmMtMi41MiAwLTQuNTYtMi4wNC00LjU2LTQuNTZzMi4wNC00LjU2IDQuNTYtNC41NiA0LjU2IDIuMDQgNC41NiA0LjU2LTIuMDQgNC41Ni00LjU2IDQuNTZ6Ii8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMzcuOSAzOC4yMWwtNC4yOS0xNC45NSAyNC4wNy02LjktMS4yOC0zLjkzSDIwLjNMOS4xNSA0Ni43NWwyOC43NS04LjU0ek0yNi4wMyAxNS4yM2MxLjg3IDAgMy4zOCAxLjUxIDMuMzggMy4zOHMtMS41MSAzLjM4LTMuMzggMy4zOC0zLjM4LTEuNTEtMy4zOC0zLjM4IDEuNTEtMy4zOCAzLjM4LTMuMzh6bTEzLjAxIDI2Ljk1bC0yNS42OSA3LjYzIDI1IDE4LjE3IDYuNjktNC44Ny02LTIwLjkzeiIvPjwvZz48L3N2Zz4K',
+  water:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiMyOTgwZWYiLz48cGF0aCBkPSJNNTQgNDEuNTdzLTMuOTYtNi44Ni01Ljg1LTkuNzhjLTEuOTctMy4wNy0zLjgyLTYuNzMtNS4yNi0xMi42MS0xLjQ0LTUuODctMi4yMi0xMS41My00LjU0LTExLjUzcy0zLjEgNS42NS00LjU0IDExLjUzYy0xLjQ0IDUuODctMy4yOSA5LjUzLTUuMjYgMTIuNjEtMS44OCAyLjkzLTUuODUgOS43OC01Ljg1IDkuNzhhMTguMDE4IDE4LjAxOCAwIDAwLTIuNTggOS4zMmMwIDEwLjAzIDguMiAxOC4xNyAxOC4yMyAxOC4xN3MxOC4yMy04LjEzIDE4LjIzLTE4LjE3YzAtMy40MS0uOTUtNi41OS0yLjU4LTkuMzJ6TTM4LjM1IDY0Ljk2Yy04LjE4IDAtMTQuNjEtNi4xLTE0LjYxLTEwLjUgMC0yLjkxIDYuNDMgMi41MiAxNC42MSAyLjUyczE0LjYxLTUuNDMgMTQuNjEtMi41MmMwIDQuNDEtNi40MyAxMC41LTE0LjYxIDEwLjV6IiBmaWxsPSIjZmZmIi8+PC9zdmc+Cg==',
+  bug:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiM5MWExMTkiLz48cGF0aCBkPSJNMzguMzUgMjguMjNjOC4xIDAgMTUuMTktMy40NCAxOS4wNy04LjU3LTMuODgtNi4yOC0xMC45Ny0xMC40OS0xOS4wNy0xMC40OXMtMTUuMTkgNC4yMS0xOS4wNyAxMC40OWMzLjg4IDUuMTMgMTAuOTcgOC41NyAxOS4wNyA4LjU3em0yMi44NC00LjI2Yy00LjU2IDUuMDItMTEuNyA4LjQ3LTE5Ljg4IDkuMTRsMTAuOTMgMzQuNDJjOC42Ny01LjUyIDE0LjQyLTE1LjEzIDE0LjQyLTI2LjA4IDAtNi40OS0yLjAyLTEyLjUtNS40Ny0xNy40OHptLTQ1LjY3IDBjNC41NiA1LjAyIDExLjcgOC40NyAxOS44OCA5LjE0TDI0LjQ3IDY3LjUzQzE1LjggNjIuMDEgMTAuMDUgNTIuNCAxMC4wNSA0MS40NWMwLTYuNDkgMi4wMi0xMi41IDUuNDctMTcuNDh6bTIyLjgzIDMwLjc1YzEuNjYgMCAzLjMxLS4zNyA0LjgzLTEuMDlsLTEuMy00Ljc0YTYuNTU0IDYuNTU0IDAgMDEtNy4wNyAwbC0xLjMgNC43NGMxLjUzLjcyIDMuMTggMS4wOSA0LjgzIDEuMDl6bTAgOS4xNGMyLjUzIDAgNC45OC0uNDggNy4yNy0xLjM2bC0xLjMzLTQuODVjLTEuODUuNzktMy44NiAxLjIxLTUuOTQgMS4yMXMtNC4wOC0uNDItNS45NC0xLjIxbC0xLjMzIDQuODVjMi4yOS44OCA0Ljc0IDEuMzYgNy4yNyAxLjM2eiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPgo=',
+  dragon:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiM1MDYxZTEiLz48cGF0aCBkPSJNMTIuMzkgMjMuOThjLTguNDEgMTEuMDUtNy4yMyAyNi44MSAzLjAyIDM2LjQ3IDEuMDktMy42IDMuMTQtNi45NSA2LjEtOS42YTIwLjkxIDIwLjkxIDAgMDEtNC4wNC0xMC40OGMtNS4xMy0zLjkyLTctMTAuNTYtNS4wOC0xNi40em01MS45MiAwYzEuOTIgNS44NC4wNSAxMi40OC01LjA4IDE2LjQtLjM4IDMuODgtMS44MiA3LjQ3LTQuMDQgMTAuNDggMi45NiAyLjY1IDUuMDEgNS45OSA2LjEgOS42IDEwLjI1LTkuNjUgMTEuNDMtMjUuNDIgMy4wMi0zNi40N3ptLTEyLjk1IDEuMzNjLTEuMTItNy40MS0zLjYzLTE1LjczLTQuODktMTkuNjQtLjIyLS42OC0xLjI2LS42Ni0xLjQ0LjAzLTEuMTcgNC4yOC0yLjYgMTEuMDktMy4yNCAxNC4yLTEuMDctLjItMi4yOS0uMzItMy40Mi0uMzJzLTIuMzUuMTEtMy40Mi4zMmMtLjY0LTMuMTEtMi4wNy05LjkxLTMuMjQtMTQuMi0uMTktLjY5LTEuMjItLjcyLTEuNDQtLjAzLTEuMjYgMy45MS0zLjc4IDEyLjIyLTQuODkgMTkuNjQtMi42NyAyLjk5LTQuMyA2LjkzLTQuMyAxMS4zMyAwIDYuMzUgMy4zNyAxMy44NSA4LjM5IDE4LjIxbDEuMzggMTIuMjdjMCAxLjggMy4zNyA0LjQxIDcuNTMgNC40MXM3LjUzLTIuNjIgNy41My00LjQxbDEuMzgtMTIuMjdjNS4wMi00LjM2IDguMzktMTEuODYgOC4zOS0xOC4yMSAwLTQuNC0xLjYzLTguMzQtNC4zLTExLjMzek0yOS44MSA0OC44MmMtMi45OC0uOTItNS4wNi0zLjYxLTUuMTUtNi43My0uMTItMy42Ny4wNy03LjU5LjA3LTcuNTlsOS4yIDE1LjQxYy0xLjYxLS4zNy0yLjk3LS43NC00LjEyLTEuMDl6bTE3LjEgMGMtMS4xNC4zNS0yLjUxLjczLTQuMTIgMS4wOWw5LjItMTUuNDFzLjE5IDMuOTIuMDcgNy41OWE3LjI4NSA3LjI4NSAwIDAxLTUuMTUgNi43M3oiIGZpbGw9IiNmZmYiLz48L3N2Zz4K',
+  electric:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiNmYWMwMDAiLz48cGF0aCBkPSJNMzcuOTcgNi45NGMyLjUgMS4xNCAxMi44NCA2LjA0IDE5Ljg0IDEyLjIyLjMxLjI3LjM0Ljc1LjA3IDEuMDYtMS41NSAxLjgtNi42NiA3Ljc1LTEyLjgyIDE0Ljk5LS4yNy4zMi0uMjQuOC4wNyAxLjA4IDEuOCAxLjU5IDcuNDggNi42OSAxMC45MSAxMC40My4yOC4zLjI2Ljc3LS4wNCAxLjA2LTIuOTggMi44Ny0xNy43MyAxNy4wNi0yMy40NSAyMS45Ny0uMy4yNi0uNzYtLjAyLS42Ny0uNDEuNzQtMy4wMiAyLjgtMTEuMDUgNC45OS0xNi44OS4xMi0uMzEuMDItLjY2LS4yNS0uODYtMi4xNS0xLjY0LTExLjU2LTguODYtMTcuNzQtMTQuNGEuNzQ2Ljc0NiAwIDAxLS4xNi0uOTFjMS4zNi0yLjYyIDcuOC0xNC43MiAxOC4zMi0yOS4wNy4yMS0uMjkuNi0uNC45Mi0uMjV6IiBmaWxsPSIjZmZmIi8+PC9zdmc+Cg==',
+  ghost:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiM3MDQxNzAiLz48cGF0aCBkPSJNNjQuNzMgMzcuNTJjLTIuNDUtLjU4LTQuNDcuNDgtNS43NSAxLjQ4LjQ5LTIuMDYuNzctNC4wOS43Ny02LjAyIDAtMTEuODItOS41OC0yMS40LTIxLjQtMjEuNHMtMjEuNCA5LjU4LTIxLjQgMjEuNGMwIDEuOTMuMjggMy45Ni43NyA2LjAyLTEuMjgtLjk5LTMuMzEtMi4wNi01Ljc1LTEuNDgtMy41MS44My02LjQgNS44OC02LjU3IDEwLjI0LS4wMy45IDEuMDcgMS4zNiAxLjY3LjY5Ljk3LTEuMDkgMi4yNC0yLjIxIDMuMTItMS44NCAyLjg4IDEuMjIgMy4xIDYuMzIgNS44NyA2LjMyIDIuNDMgMCA0LjUyLTIuNDMgNS41NC0zLjg2IDQuNjYgOC43OSAxMS44NCAxNi4wNiAxNi43NCAxNi4wNnMxMi4wNy03LjI2IDE2Ljc0LTE2LjA2YzEuMDIgMS40MyAzLjExIDMuODYgNS41NCAzLjg2IDIuNzcgMCAyLjk5LTUuMSA1Ljg3LTYuMzIuODgtLjM3IDIuMTUuNzQgMy4xMiAxLjg0LjYuNjcgMS43MS4yMSAxLjY3LS42OS0uMTctNC4zNi0zLjA2LTkuNDEtNi41Ny0xMC4yNHptLTMxLjU5LTIuNzRjLTEuNzguODMtNC40OC0xLjE4LTYuMDMtNC41LTEuNTUtMy4zMi0xLjM1LTYuNjguNDMtNy41MSAxLjc4LS44MyA0LjQ4IDEuMTggNi4wMyA0LjUgMS41NSAzLjMyIDEuMzYgNi42OC0uNDMgNy41MXptMTYuNDUtNC41Yy0xLjU1IDMuMzItNC4yNSA1LjMzLTYuMDMgNC41LTEuNzgtLjgzLTEuOTgtNC4yLS40My03LjUxIDEuNTUtMy4zMiA0LjI1LTUuMzMgNi4wMy00LjUgMS43OC44MyAxLjk4IDQuMi40MyA3LjUxeiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPgo=',
+  fire:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiNlNjI4MjkiLz48cGF0aCBkPSJNNTUuNzggMzguMWMtNS4zMi01LjE1LTMuNjYtOS4xNC0xLjIxLTExLjI2IDAgMC02LjUzLS43OS04Ljg1IDQuNTMtMi4zMyA1LjMyIDIuMTYgOC4wNiAyLjE2IDguMDZzLTYuNDgtMi41OC00LjY2LTguOWMxLjYxLTUuNTYgNC41Ny04LjQ4IDMuMjQtMTQuMzgtMS41LTYuNjctMTAuOTctOS40OS0xNS41NS03Ljc0IDMuMiAxLjA4IDUuNTEgNC4wOSA1LjUxIDcuNjYgMCA0LjE2LTMuMjkgNi45Mi03LjcxIDExLjM5LTUuMTEgNS4xNS0xMC4zMiAxMC45Ny0xMC4zMiAyMC4zMSAwIDEwLjc4IDYuNjUgMTcuNDUgMTQuNjIgMTkuODctNC4wNC0xLjkzLTEyLjQ1LTcuOTktMTEuNC0xOS42NSAxLjEtMTIuMyAxMi44OS0yMC43IDEyLjg5LTIwLjdzLTIuNTQgNC4yNi0xLjQzIDExLjE2Yy42MiAzLjg4IDMuNCA4LjY1IDYuMDUgMTAuNzIgMy43MiAyLjkxIDguNjQgNS45MyA3LjkzIDExLjQ1LS42NyA1LjE4LTcuNTUgNy41LTExLjAyIDcuNzEgMS41OC4yNiAzLjE5LjM3IDQuNzguMzIgMTEuODEgMCAyMC41OC04Ljc4IDIwLjU4LTE4LjEyIDAtNy4zOS0zLjU0LTEwLjQzLTUuNjItMTIuNDN6IiBmaWxsPSIjZmZmIi8+PC9zdmc+Cg==',
+  fairy:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiNlZjcxZWYiLz48cGF0aCBkPSJNNjYuMzYgMTIuMDhjLTIuMTgtMi4xOC0xNS42MS0zLjE2LTI0LjY1IDUuODgtMS41NSAxLjU1LTIuNjMgMy40LTMuMjUgNS4zNS0uNjItMS45Ni0xLjctMy44LTMuMjUtNS4zNS05LjA0LTkuMDQtMjIuNDctOC4wNi0yNC42NS01Ljg4UzcuNCAyNy42OSAxNi40NCAzNi43M2MxLjkxIDEuOTEgNC4yNiAzLjExIDYuNzMgMy42MS01IDQuMzMtNS41NyAxMS4xOC00LjYxIDEyLjUyIDEuMDIgMS40MiA4LjQgMy4yMSAxNC4zMS0uOTQtLjI3Ljc5LS41MyAxLjYtLjc5IDIuNDQtMi40NyA4LjA4LTMuMzkgMTQuOTYtMi4wNyAxNS4zNiAxLjMzLjQxIDQuNDEtNS44MSA2Ljg4LTEzLjg5LjYyLTIuMDMgMS4xNS0zLjk5IDEuNTYtNS43OS40MSAxLjguOTQgMy43NiAxLjU2IDUuNzkgMi40NyA4LjA4IDUuNTUgMTQuMyA2Ljg4IDEzLjg5IDEuMzMtLjQxLjQtNy4yOS0yLjA3LTE1LjM2LS4yNi0uODQtLjUyLTEuNjUtLjc5LTIuNDQgNS45MSA0LjE1IDEzLjMgMi4zNiAxNC4zMS45NC45Ni0xLjM0LjM5LTguMTgtNC42MS0xMi41MiAyLjQ3LS41IDQuODItMS43IDYuNzMtMy42MSA5LjA0LTkuMDQgOC4wNi0yMi40NyA1Ljg4LTI0LjY1em0tMjcuOSAyOC4wNWMtNC4zMSAwLTguMDQtMi40NS05LjktNi4wMyA1LjAxLS4wMiA5LjE1LTMuNzQgOS44MS04LjU3LjAyLS4xMi4xNy0uMTIuMTggMCAuNjYgNC44MyA0LjggOC41NiA5LjgxIDguNTctMS44NiAzLjU4LTUuNTkgNi4wMy05LjkgNi4wM3oiIGZpbGw9IiNmZmYiLz48L3N2Zz4K',
+  ice:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PGc+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiMzZmQ4ZmYiLz48cGF0aCBmaWxsPSIjZmZmIiB0cmFuc2Zvcm09InJvdGF0ZSgtNDUgMzguMzU0IDExLjc0MykiIGQ9Ik0zMy40NCA2LjgyaDkuODN2OS44M2gtOS44M3oiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTEuNDkgNDguMjRoOS44M3Y5LjgzaC05LjgzeiIvPjxwYXRoIGZpbGw9IiNmZmYiIHRyYW5zZm9ybT0icm90YXRlKC00NSAzOC4zNTMgNjQuOTc0KSIgZD0iTTMzLjQ0IDYwLjA1aDkuODN2OS44M2gtOS44M3oiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNTUuMzggMTguNzV2OS43N2wtMTcuMDMtOS44My0xNy4wMyA5Ljgzdi05Ljc3aC05LjgzdjkuODNoOS44M3YxOS42bDE3LjAzIDkuODMgMTcuMDMtOS44M3YtMTkuNmg5Ljgzdi05LjgzaC05Ljgzek0zMS4xNCAzNC4zMnY5LjYyaC01LjExdi0xMi42aC4wNWwxMC44Ni02LjI3IDIuNTUgNC40Mi04LjM2IDQuODN6bTI0LjI0IDEzLjkyaDkuODN2OS44M2gtOS44M3oiLz48L2c+PC9zdmc+Cg==',
+  fighting:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiNmZjgwMDAiLz48cGF0aCBkPSJNNDAuNzIgMzQuMDNoMjEuOHY5Ljg4aC0yMS44di05Ljg4em0xMy4zMy0yMnYxNy42Nmg4LjQ3VjEyLjAzaC04LjQ3em0tNC44NiAwaC04LjQ3djE3LjY2aDguNDdWMTIuMDN6bS0xMy4yIDBoLTguNDd2MjMuMjJoOC40N1YxMi4wM3ptLTEzLjMzIDBoLTguNDd2MjMuMjJoOC40N1YxMi4wM3ptMTQuMDMgMzEuNDNoLTIyLjV2MTIuOTdsMTQuNDEgOS40MiAzMy45Mi0xMC40NnYtNy4zOEgzNi42OXYtNC41NHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4K',
+  normal:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiM5ZmExOWYiLz48cGF0aCBkPSJNNjMuODEgMjYuNDNjMy4xMi00LjI5IDIuNDMtMTAuMzMtMS42OS0xMy43OS00LTMuMzYtOS44Mi0zLjExLTEzLjU0LjM5LTMuMTgtMS4yMS02LjYzLTEuODgtMTAuMjMtMS44OHMtNy4wNS42Ny0xMC4yMyAxLjg4Yy0zLjcxLTMuNS05LjUzLTMuNzQtMTMuNTQtLjM5LTQuMTMgMy40Ni00LjgxIDkuNDktMS42OSAxMy43OS0yLjE3IDQuMDUtMy40IDguNjctMy40IDEzLjU4IDAgMTUuOTEgMTIuOTUgMjguODYgMjguODYgMjguODZzMjguODYtMTIuOTUgMjguODYtMjguODZjMC00LjkxLTEuMjMtOS41My0zLjQtMTMuNTh6TTM4LjM1IDYwLjg3Yy0xMS41IDAtMjAuODYtOS4zNi0yMC44Ni0yMC44NnM5LjM2LTIwLjg2IDIwLjg2LTIwLjg2IDIwLjg2IDkuMzYgMjAuODYgMjAuODYtOS4zNiAyMC44Ni0yMC44NiAyMC44NnoiIGZpbGw9IiNmZmYiLz48L3N2Zz4K',
+  grass:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiMzZmExMjkiLz48cGF0aCBkPSJNMTEuNDcgNjYuNjJIMjkuMXM0LjgyLTQ0LjM5IDIuMzMtNDQuMzktMTkuOTYgNDQuMzktMTkuOTYgNDQuMzl6bTI5LjYgMGgxNy42MlM2NyAyMi4yMyA2NC41MSAyMi4yMyA0MS4wNyA2Ni42MiA0MS4wNyA2Ni42MnptLTUuOTkgMGwxMi44LTI1LjQ0czQuNjYtMzAuMjYgMi40OS0zMC4yNi0xMy4xNCAyNi45NC0xMy4xNCAyNi45NGwtMi4xNiAyOC43NnoiIGZpbGw9IiNmZmYiLz48L3N2Zz4K',
+  psychic:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiNlZjQxNzkiLz48cGF0aCBkPSJNMzguMzUgMTYuMjhjLjI5IDAgLjU5LjE2LjcyLjQ4IDIuNjIgNi4yOSA4Ljc5IDEwLjMyIDE1LjQ3IDEwLjMyLjcxIDAgMS40My0uMDUgMi4xNS0uMTRoLjExYy42MyAwIDEuMDEuNzMuNjEgMS4yNi00LjU4IDUuOTgtNC41OCAxNC4zNC0uMDIgMjAuMzMuNC41Mi4wMSAxLjI1LS42MSAxLjI1aC0uMTFjLS43Mi0uMDktMS40My0uMTQtMi4xNC0uMTQtNi42OCAwLTEyLjg1IDQuMDItMTUuNDcgMTAuMzItLjEzLjMyLS40My40OC0uNzIuNDhzLS41OS0uMTYtLjcyLS40OEMzNSA1My42NyAyOC44MyA0OS42NCAyMi4xNSA0OS42NGMtLjcxIDAtMS40My4wNS0yLjE1LjE0aC0uMTFjLS42MyAwLTEuMDEtLjczLS42MS0xLjI2IDQuNTgtNS45OCA0LjU4LTE0LjM0LjAyLTIwLjMzLS40LS41Mi0uMDEtMS4yNS42MS0xLjI1aC4xMWMuNzIuMDkgMS40My4xNCAyLjE0LjE0IDYuNjggMCAxMi44NS00LjAyIDE1LjQ3LTEwLjMyLjEzLS4zMi40My0uNDguNzItLjQ4bTAtOC43Yy0zLjg0IDAtNy4yOCAyLjI5LTguNzUgNS44NC0xLjIzIDIuOTYtNC4yMiA0Ljk2LTcuNDQgNC45Ni0uMzQgMC0uNjgtLjAyLTEuMDItLjA3LS40LS4wNS0uODEtLjA4LTEuMjItLjA4LTMuNjIgMC02Ljg4IDIuMDItOC40OSA1LjI3YTkuNDIgOS40MiAwIDAwLjk1IDkuOTVjMi4xOSAyLjg4IDIuMTkgNi45IDAgOS43N2E5LjQxNyA5LjQxNyAwIDAwLS45NyA5Ljk2IDkuNDA3IDkuNDA3IDAgMDA4LjQ5IDUuMjhjLjQxIDAgLjgyLS4wMyAxLjIzLS4wOC4zNC0uMDQuNjktLjA3IDEuMDMtLjA3IDMuMjIgMCA2LjIxIDEuOTkgNy40NCA0Ljk2IDEuNDggMy41NSA0LjkxIDUuODQgOC43NSA1Ljg0czcuMjgtMi4yOSA4Ljc1LTUuODRjMS4yMy0yLjk2IDQuMjItNC45NiA3LjQ0LTQuOTYuMzQgMCAuNjguMDIgMS4wMi4wNy40LjA1LjgxLjA4IDEuMjIuMDggMy42MiAwIDYuODgtMi4wMiA4LjQ5LTUuMjdhOS40MiA5LjQyIDAgMDAtLjk1LTkuOTVjLTIuMTktMi44OC0yLjE5LTYuOSAwLTkuNzcgMi4yMS0yLjg5IDIuNTgtNi43Ljk3LTkuOTZhOS40MDcgOS40MDcgMCAwMC04LjQ5LTUuMjhjLS40MSAwLS44Mi4wMy0xLjIzLjA4LS4zNC4wNC0uNjkuMDctMS4wMy4wNy0zLjIyIDAtNi4yMS0xLjk5LTcuNDQtNC45NmE5LjQ0MyA5LjQ0MyAwIDAwLTguNzUtNS44NHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4K',
+  rock:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiNhZmE5ODEiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNTguNzEgMThsMi42NyAxMS43Mi0xNC4zOS0xNC4zOUw1OC43MSAxOGwtOC40My04LjQzSDI2LjQzTDkuNTcgMjYuNDN2MjMuODVsOC4yMyA4LjIzLTQuNDktMTkuNzJMMzcuNTIgNjMgMTcuOCA1OC41MWw4LjYzIDguNjNoMjMuODVsOC40My04LjQzLTE5LjcyIDQuNDlMNjMuMiAzOC45OWwtNC40OSAxOS43MiA4LjQzLTguNDNWMjYuNDNMNTguNzEgMTh6Ii8+PC9zdmc+Cg==',
+  dark:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PGc+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiM1MDQxM2YiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNjAuMSAyMC43M3MtMy4yNSA0LjQxLTEwLjc4IDYuNzRjLjg0IDIuMjggMS4zMiA0LjkzIDEuMzIgNy45IDAgMTAuMTUtNS41IDE4LjM5LTEyLjI4IDE4LjM5cy0xMi4yOC03LjI3LTEyLjI4LTE4LjM5YzAtMi45NS41OC01LjU4IDEuNTItNy44NC03LjY3LTIuMzItMTAuOTgtNi44LTEwLjk4LTYuOHMtNy41NCA4LjA0LTYuODMgMTcuMTljLjQyIDUuMzMgMy4zIDExLjYgMTAuMzUgMTcuMzggMCAwIDcuNTQgNi42NiAxOC4yMiA2LjY2czE4LjIyLTYuNjYgMTguMjItNi42NmM3LjA1LTUuNzggOS45My0xMi4wNCAxMC4zNS0xNy4zOC43Mi05LjE1LTYuODMtMTcuMTktNi44My0xNy4xOXoiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMzUuNTQgMjguODVjLS45NiAyLTEuNTggNC44OS0xLjU4IDcuNzIgMCA1LjA4IDEuOTcgOS4xOSA0LjM5IDkuMTlzNC4zOS00LjEyIDQuMzktOS4xOWMwLTIuODQtLjYxLTUuNzMtMS41OC03LjcyLS45LjA0LTEuODQuMDUtMi44MS4wMi0uOTcuMDMtMS45MS4wMi0yLjgxLS4wMnoiLz48L2c+PC9zdmc+Cg==',
+  ground:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PGc+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiM5MTUxMjEiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNTIuMjkgMTYuMDdoOC4zMXY4LjMxaC04LjMxem0tMjQuNDQgNi40OWg2LjQ4djYuNDhoLTYuNDh6TTEzLjU1IDguOTJoMTAuODF2MTAuODFIMTMuNTV6bTUzLjg5IDM5LjI5VjQ2LjFMMzguMzUgMzQuNDkgOS4yNiA0Ni4xdjIuMTFsMjkuMDkgMTEuNiAyOS4wOS0xMS42eiIvPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik02Ny41MiA1My41MkwzOC4zNSA2NS4zIDkuMTkgNTMuNTJsLTEuNDcgMy42NCAzMC42MyAxMi4zOCAzMC42NC0xMi4zOC0xLjQ3LTMuNjR6Ii8+PC9nPjwvc3ZnPgo=',
+  poison:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PGc+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiM4ZjQxY2IiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNDcuNyA1Ni43NWMtLjU1LTQuNjgtNC41Mi04LjMxLTkuMzUtOC4zMXMtOC44IDMuNjMtOS4zNSA4LjMxYy0xMS41MS44NC0xOS44IDMuMTgtMTkuOCA1LjkzIDAgMy40NiAxMy4wNSA2LjI2IDI5LjE1IDYuMjZzMjkuMTUtMi44IDI5LjE1LTYuMjZjMC0yLjc2LTguMjktNS4wOS0xOS44LTUuOTN6Ii8+PGNpcmNsZSBmaWxsPSIjZmZmIiBjeD0iMjguMzEiIGN5PSIyMy4yMiIgcj0iMTEuMiIvPjxjaXJjbGUgZmlsbD0iI2ZmZiIgY3g9IjUxLjI4IiBjeT0iMzcuNTciIHI9IjYuNjQiLz48L2c+PC9zdmc+Cg==',
+  flying:'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3Ni43MSA3Ni43MSI+PHJlY3Qgd2lkdGg9Ijc2LjcxIiBoZWlnaHQ9Ijc2LjcxIiByeD0iNi41NyIgcnk9IjYuNTciIGZpbGw9IiM4MWI5ZWYiLz48cGF0aCBkPSJNMjMuNzggMjcuN2MtMS45NCA0LjQzLTcuNSAyMy4xMi04LjgxIDMzLjE1LS42NyA1LjA5LTEuMzEgNi44NiAwIDcuMjUgMS42Ni41IDguNjUtMTAuMzEgMTEuMTQtMTQuNDcgMCAwIDE1LjkyIDIuMzkgMjQuMDktNy43OS4xOS0uMjQtLjAyLS41OS0uMzItLjUzLTMuMjIuNTUtMTQuODEgMi4zNC0xOS45NC4zNSAwIDAgMjAuODkuODEgMzAuMzgtMTQuNjcuMTMtLjItLjA4LS40Ni0uMy0uMzgtMy4yOSAxLjE5LTE3LjUgNS44Ni0yNi4wMSAzLjY2IDAgMCAxMy44My0uODEgMjQuMjgtMTAuMzFTNjkuNiA5LjY2IDY4Ljg1IDguOTFjLTEuNDItMS40Mi04LjY1IDIuMTYtMTQuNDcgMy45OXMtMTMuMTQgMy45OS0xNy45NiA0Ljk5LTguODEgMS4wOC0xMi42NCA5LjgxeiIgZmlsbD0iI2ZmZiIvPjwvc3ZnPgo=',
+};
+
+function moveTypeIcon(cls) {
+  const type = cls.replace('mv-','');
+  return TYPE_ICON_URL[type] || TYPE_ICON_URL.normal;
+}
+
+function calcStats(base, evs, nature) {
+  const evMap = {};
+  for (const [s,v] of evs) evMap[s] = parseInt(v)||0;
+  const keys = ['HP','Atk','Def','SpA','SpD','Spe'];
+  const mods = NATURE_MOD[nature] || [0,0,0,0,0];
+  const modMap = {Atk:mods[0],Def:mods[1],SpA:mods[2],SpD:mods[3],Spe:mods[4]};
+  return keys.map((k,i) => {
+    const b = base[i]||80, ev = evMap[k]||0, iv=31, lv=50;
+    let val;
+    if(k==='HP') val = Math.floor(((2*b+iv)*lv/100)+lv+10)+ev;
+    else { const bv=Math.floor(((2*b+iv)*lv/100)+5)+ev; const mod=modMap[k]||0; val=Math.floor(bv*(mod===1?1.1:mod===-1?0.9:1.0)); }
+    return {key:k,val,mod:modMap[k]||0};
+  });
+}
+
+function getSpriteUrl(p) {
+  const id = p.spriteId || 0;
+  if(!id) return '';
+  if(p.shiny) return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/shiny/${id}.gif`;
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/showdown/${id}.gif`;
+}
+
+function buildCard(p) {
+  if(!p || !p.name) return '';
+  const types = (p.types||[]).map(t => Array.isArray(t)?t:[t,t]);
+  const primaryType = types[0]?.[0] || 'normal';
+  const typeColor = TYPE_COLOR[primaryType] || '#7a7a9a';
+  const typePills = types.map(([cls,l]) => `<span class="type-pill t-${cls}">${l}</span>`).join('');
+  const sprite = getSpriteUrl(p);
+  const base = p._baseStats || [80,80,80,80,80,80];
+  const stats = calcStats(base, p.evs||[], p.nature||'Hardy');
+  const evMap = {}; for(const [k,v] of (p.evs||[])) evMap[k]=parseInt(v)||0;
+
+  const statRows = stats.map(s => {
+    const pct = Math.min(100, Math.round(s.val / MAX_STAT[s.key] * 100));
+    const evPct = Math.round((evMap[s.key]||0) / MAX_STAT[s.key] * 100);
+    const nc = s.mod===1?' nat-up':s.mod===-1?' nat-down':'';
+    const STAT_LBL = {HP:'HP',Atk:'Atk',Def:'Def',SpA:'SpA',SpD:'SpD',Spe:'Spe'};
+    return `<div class="stat-row">
+      <div class="stat-lbl${nc}">${STAT_LBL[s.key]}</div>
+      <div class="stat-val${nc}">${s.val}</div>
+      <div class="stat-bar-bg">
+        <div class="stat-bar-fill" style="width:${pct}%;background:${typeColor};"></div>
+        ${evMap[s.key]>0?`<div class="stat-bar-ev" style="left:${pct}%;width:${evPct}%;"></div>`:''}
+      </div>
+      <div class="stat-ev">${evMap[s.key]>0?'+'+evMap[s.key]:''}</div>
+    </div>`;
+  }).join('');
+
+  const moves = (p.moves||[]).map(([cls,m]) => {
+    if(!m) return '';
+    const iconUrl = moveTypeIcon(cls);
+    return `<div class="move-row ${cls}">
+      <div class="move-left">
+        <img src="${iconUrl}" class="move-type-icon" alt="${cls.replace('mv-','')}" onerror="this.style.visibility='hidden'">
+        <span class="move-name">${m}</span>
+      </div>
+    </div>`;
+  }).filter(Boolean).join('');
+
+  const shinyStars = p.shiny ? `<div class="star-field">${
+    [[6,8],[6,88],[50,3],[50,93],[92,8],[92,88],[20,45],[75,55],[35,91],[65,5]]
+    .map(([t,l],i)=>`<div class="star" style="top:${t}%;left:${l}%;animation:starTwinkle ${(1.4+i*0.28).toFixed(2)}s ease-in-out infinite -${(i*0.31).toFixed(2)}s;">✦</div>`)
+    .join('')
+  }</div>` : '';
+
+  const itemSlug = p.itemSlug || '';
+  const itemImgSrc = itemSlug ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemSlug}.png` : '';
+
+  return `<div class="card${p.shiny?' is-shiny':''}" style="--type-color:${typeColor};">
+    <div class="name-bar">
+      <div class="pokemon-name">${p.display||p.name||'—'}</div>
+      ${p.shiny?'<span class="shiny-star">✦</span>':''}
+      <div class="type-pills">${typePills}</div>
+    </div>
+    <div style="height:2px;background:linear-gradient(to right,${typeColor} ${types.length>1?'50%':'100%'},${types.length>1?(TYPE_COLOR[types[1]?.[0]]||typeColor):typeColor} ${types.length>1?'50%':'100%'});"></div>
+    <div class="sprite-area">
+      ${shinyStars}
+      <div class="sprite-bg"></div>
+      <div class="sprite-ring"></div>
+      ${sprite?`<img class="sprite-img" src="${sprite}" alt="${p.name}" onerror="this.style.display='none'">`:''}
+    </div>
+    <div style="display:flex;padding:6px 10px 10px;gap:6px;">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+        <div style="background:rgba(255,255,255,0.03);border-radius:8px;padding:6px 10px;display:flex;align-items:center;gap:8px;min-height:36px;">
+          ${itemImgSrc?`<img src="${itemImgSrc}" alt="${p.item}" style="width:32px;height:32px;image-rendering:pixelated;flex-shrink:0;" onerror="this.style.visibility='hidden'">`:''}
+          <span class="item-name">${p.item||'—'}</span>
+        </div>
+        ${moves}
+      </div>
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;">
+        <div style="background:var(--bg3);border-radius:8px;padding:6px 10px;display:flex;align-items:center;justify-content:center;min-height:36px;">
+          <span class="ability-name">${p.ability||'—'}</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:space-between;gap:0;">${statRows}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+function toShowdownText(team) {
+  return team.filter(p => p && p.name).map(p => {
+    const lines = [];
+    const nickname = p.nickname && p.nickname !== p.name ? `${p.nickname} (${p.name})` : p.name;
+    lines.push(p.item ? `${nickname} @ ${p.item}` : nickname);
+    if (p.ability) lines.push(`Ability: ${p.ability}`);
+    if (p.level && p.level !== 50) lines.push(`Level: ${p.level}`);
+    if (p.shiny) lines.push('Shiny: Yes');
+    const evs = (p.evs || []).filter(([,v]) => parseInt(v) > 0).map(([k,v]) => `${v} ${k}`).join(' / ');
+    if (evs) lines.push(`EVs: ${evs}`);
+    if (p.nature) lines.push(`${p.nature} Nature`);
+    const ivs = (p.ivs || []).filter(([,v]) => parseInt(v) !== 31).map(([k,v]) => `${v} ${k}`).join(' / ');
+    if (ivs) lines.push(`IVs: ${ivs}`);
+    (p.moves || []).filter(m => Array.isArray(m) ? m[1] : m && m.name).forEach(m => lines.push(`- ${Array.isArray(m) ? m[1] : m.name}`));
+    return lines.join('\n');
+  }).join('\n\n');
+}
+
+async function loadTeam() {
+  // ── Apply language preference ──────────────────────────────────────────────
+  const VB18N = {
+    en:    { wa: '📱 WhatsApp', copy: '🔗 Copy link', copied: '✓ Copied', showdown: '📋 Showdown code', showdownCopied: '✓ Copied',  clone: 'Clone team' },
+    es_la: { wa: '📱 WhatsApp', copy: '🔗 Copiar link', copied: '✓ Copiado', showdown: '📋 Código Showdown', showdownCopied: '✓ Copiado', clone: 'Clonar equipo' },
+    es_es: { wa: '📱 WhatsApp', copy: '🔗 Copiar link', copied: '✓ Copiado', showdown: '📋 Código Showdown', showdownCopied: '✓ Copiado', clone: 'Clonar equipo' },
+  };
+  let _vlang = 'en';
+  try { const s = localStorage.getItem('pokemon_champions_lang'); if (VB18N[s]) _vlang = s; } catch(e) {}
+  const _vt = k => (VB18N[_vlang] || VB18N.en)[k] || k;
+  document.getElementById('shareWaBtn').textContent   = _vt('wa');
+  document.getElementById('copyLinkBtn').textContent  = _vt('copy');
+  document.getElementById('copyShowdownBtn').textContent = _vt('showdown');
+  // ──────────────────────────────────────────────────────────────────────────
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('t');
+  if(!token) { showError(); return; }
+
+  try {
+    const { data, error } = await _sb.from('teams')
+      .select('name, team_data')
+      .eq('share_token', token)
+      .single();
+    if(error || !data) { showError(); return; }
+
+    const teamName = data.name || 'Equipo';
+    document.title = `${teamName} — VGC Builder`;
+    document.getElementById('teamNameHeader').textContent = teamName;
+
+    const team = Array.isArray(data.team_data) ? data.team_data : [];
+    const grid = document.getElementById('grid');
+    let html = '';
+    for(const p of team) {
+      if(p && p.name) html += `<div class="card-wrap">${buildCard(p)}</div>`;
+    }
+    grid.innerHTML = html || '<div style="color:var(--muted);padding:40px;grid-column:1/-1;text-align:center">Este equipo está vacío.</div>';
+
+    // Share buttons
+    const link = window.location.href;
+    document.getElementById('shareWaBtn').onclick = () => {
+      const msg = `Mirá mi equipo Pokémon "${teamName}" 🎮\n${link}`;
+      window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+    };
+    document.getElementById('copyLinkBtn').onclick = () => {
+      navigator.clipboard.writeText(link).then(() => {
+        const btn = document.getElementById('copyLinkBtn');
+        const orig = btn.textContent;
+        btn.textContent = _vt('copied');
+        setTimeout(() => btn.textContent = orig, 2000);
+      });
+    };
+
+    // Copy Showdown button
+    document.getElementById('copyShowdownBtn').onclick = () => {
+      const text = toShowdownText(team);
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyShowdownBtn');
+        const orig = btn.textContent;
+        btn.textContent = _vt('showdownCopied');
+        setTimeout(() => btn.textContent = orig, 2000);
+      });
+    };
+
+    // ── Clone button: show only if user is logged in ──────────────────────────
+    const { data: { session } } = await _sb.auth.getSession();
+    if (session) {
+      const cloneBtn = document.getElementById('cloneTeamBtn');
+      cloneBtn.classList.add('visible');
+      cloneBtn.textContent = `⊕ ${_vt('clone')}`;
+      cloneBtn.onclick = async () => {
+        cloneBtn.disabled = true;
+        cloneBtn.textContent = '…';
+        try {
+          const { error: insertErr } = await _sb.from('teams').insert({
+            user_id:   session.user.id,
+            name:      `Copia de ${teamName}`,
+            team_data: team,
+          });
+          if (insertErr) throw insertErr;
+          cloneBtn.textContent = '✓ Clonado';
+          setTimeout(() => { window.location.href = 'dashboard.html'; }, 900);
+        } catch(err) {
+          console.error(err);
+          cloneBtn.textContent = '⊕ Error, intentá de nuevo';
+          cloneBtn.disabled = false;
+        }
+      };
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    document.getElementById('loadingEl').style.display = 'none';
+    document.getElementById('contentEl').style.display = 'block';
+  } catch(e) {
+    console.error(e);
+    showError();
+  }
+}
+
+function showError() {
+  document.getElementById('loadingEl').style.display = 'none';
+  document.getElementById('errorEl').style.display = 'block';
+}
+
+loadTeam();
+</script>
+</body>
+</html>
