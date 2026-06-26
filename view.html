@@ -302,7 +302,7 @@ function toShowdownText(team) {
     if (p.nature) lines.push(`${p.nature} Nature`);
     const ivs = (p.ivs || []).filter(([,v]) => parseInt(v) !== 31).map(([k,v]) => `${v} ${k}`).join(' / ');
     if (ivs) lines.push(`IVs: ${ivs}`);
-    (p.moves || []).filter(m => m && m.name).forEach(m => lines.push(`- ${m.name}`));
+    (p.moves || []).filter(m => Array.isArray(m) ? m[1] : m && m.name).forEach(m => lines.push(`- ${Array.isArray(m) ? m[1] : m.name}`));
     return lines.join('\n');
   }).join('\n\n');
 }
