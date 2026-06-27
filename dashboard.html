@@ -524,8 +524,8 @@ async function loadTeams() {
             <div class="team-poke-grid">${pokeGrid}</div>
           </div>
           <div class="team-card-footer">
-            <button class="tc-btn tc-open" onclick="editTeam('${t.id}')">✏️ ${_t('edit')}</button>
-            <button class="tc-btn tc-history" onclick="showHistory('${t.id}', '${escHtml(t.name)}')">🕐 ${_t('history')}</button>
+            <button class="tc-btn tc-open" onclick="editTeam('${t.id}')">${_t('edit')}</button>
+            <button class="tc-btn tc-history" onclick="showHistory('${t.id}', '${escHtml(t.name)}')">${_t('history')}</button>
             <button class="tc-btn tc-share" onclick="shareTeam('${t.id}', '${escHtml(t.name)}', '${t.share_token || ''}')">🔗 Link</button>
             <button class="tc-btn tc-delete" onclick="deleteTeam('${t.id}', event)">🗑️</button>
           </div>
